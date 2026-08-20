@@ -1,1272 +1,1186 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>公交车辆运营状态模拟器</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
-            font-family: '微软雅黑', Arial, sans-serif;
-            background-color: #f5f7fa;
-            min-height: 100vh;
-        }
+	<meta charset="UTF-8">
+	<title>公交车辆运营状态模拟器</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		body {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			padding: 40px 20px;
+			font-family: '微软雅黑', Arial, sans-serif;
+			background-color: #f5f7fa;
+			min-height: 100vh;
+		}
+		input, select, textarea, label {
+			color: #606266;
+			font-family: '微软雅黑', Arial, sans-serif;
+		}
+		input::placeholder {
+			color: #909399;
+		}
+		.rule-control {
+			width: 100%;
+			max-width: 800px;
+			background: white;
+			padding: 24px;
+			border-radius: 12px;
+			box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+			margin-bottom: 24px;
+		}
+		.control-row {
+			display: flex;
+			align-items: center;
+			gap: 16px;
+			margin-bottom: 16px;
+			flex-wrap: wrap;
+		}
+		.control-label {
+			font-size: 18px;
+			color: #303133;
+			min-width: 80px;
+		}
+		.span-font {
+			font-size: 14px;
+			color: #606266;
+			min-width: 80px;
+		}
+		#modeSelect {
+			padding: 4px 10px;
+			border: 1px solid #dcdfe6;
+			border-radius: 6px;
+			font-size: 14px;
+			outline: none;
+			cursor: pointer;
+		}
+		#modeSelect:focus {
+			border-color: #409eff;
+		}
+		#aInput {
+			padding: 4px 10px;
+			border: 1px solid #dcdfe6;
+			border-radius: 6px;
+			font-size: 14px;
+			width: 120px;
+			outline: none;
+		}
+		#forceBlueInput,#forceWhiteInput,#forceFaultInput,#forcePermanentInput {padding:6px 8px;border:1px solid #dcdfe6;border-radius:6px;font-size:13px;width:140px;outline:none}\n		#aInput:focus {
+			border-color: #409eff;
+		}
+		#probabilitySlider {
+			width: 200px;
+			height: 6px;
+			border-radius: 3px;
+			outline: none;
+			background: #dcdfe6;
+			-webkit-appearance: none;
+			cursor: pointer;
+		}
+		#probabilitySlider::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			background: #409eff;
+			cursor: pointer;
+			box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+		}
+		.rule-desc {
+			font-size: 13px;
+			color: #409eff;
+			background: #ecf5ff;
+			padding: 4px 10px;
+			border-radius: 6px;
+			margin-top: 8px;
+		}
+		.notice {
+			font-size: 20px;
+			color: #ff8e94;
+			background: #ffe4ef;
+			padding: 4px 10px;
+			border-radius: 8px;
+			margin-top: 8px;
+		}
+		.btn-group {
+			display: flex;
+			gap: 16px;
+			margin-bottom: 24px;
+		}
+		button {
+			padding: 12px 32px;
+			font-size: 16px;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			transition: all 0.3s;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		}
+		#regenerateBtn {
+			background-color: #409eff;
+			color: white;
+		}
+		#regenerateBtn:hover {
+			background-color: #66b1ff;
+			box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+		}
+		#continueBtn {
+			background-color: #67c23a;
+			color: white;
+		}
+		#continueBtn:hover:not(:disabled) {
+			background-color: #85ce61;
+			box-shadow: 0 4px 12px rgba(103, 194, 58, 0.4);
+		}
+		#continueBtn:disabled {
+			background-color: #c0c4cc;
+			cursor: not-allowed;
+			box-shadow: none;
+		}
+		#result {
+			width: max-content;
+			min-width: 100%;
+			max-width: 800px;
+			background: white;
+			padding: 24px;
+			border-radius: 12px;
+			box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+			font-size: 13px;
+			line-height: 1.6;
+			white-space: normal;
+			overflow: visible;
+		}
+		.num-item {
+			white-space: nowrap;
+			width: max-content;
+			font-weight: bold;
+			display: block;
+			padding: 4px 8px;
+			border-radius: 4px;
+			margin-right: 12px;
+			margin-bottom: 4px;
+			transition: background-color 0.2s;
+		}
+		.num-item:hover {
+			background-color: #e8f3ff;
+		}
+		.moved-red {
+			color: red !important;
+			font-weight: bold;
+		}
+		.blue-streak-gold {
+			color: #d4af37;
+			font-weight: bold;
+		}
+		.white-streak-red {
+			color: #ff9999;
+			font-weight: bold;
+		}
 
-        /* 统一表单控件字体颜色，避免部分输入框/复选框继承浏览器默认黑色 */
-        input, select, textarea, label {
-            color: #606266;
-            font-family: '微软雅黑', Arial, sans-serif;
-        }
-        input::placeholder {
-            color: #909399;
-        }
-
-        /* 规则控制区域样式 */
-        .rule-control {
-            width: 100%;
-            max-width: 800px;
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            margin-bottom: 24px;
-        }
-        .control-row {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .control-label {
-            font-size: 18px;
-            color: #303133;
-            min-width: 80px;
-        }
-        .span-font {
-            font-size: 14px;
-            color: #606266;
-            min-width: 80px;
-        }
-        #modeSelect {
-            padding: 4px 10px;
-            border: 1px solid #dcdfe6;
-            border-radius: 6px;
-            font-size: 14px;
-            outline: none;
-            cursor: pointer;
-        }
-        #modeSelect:focus {
-            border-color: #409eff;
-        }
-        #aInput {
-            padding: 4px 10px;
-            border: 1px solid #dcdfe6;
-            border-radius: 6px;
-            font-size: 14px;
-            width: 120px;
-            outline: none;
-        }
-        #forceBlueInput,#forceWhiteInput,#forceFaultInput,#forcePermanentInput {padding:6px 8px;border:1px solid #dcdfe6;border-radius:6px;font-size:13px;width:140px;outline:none}\n        #aInput:focus {
-            border-color: #409eff;
-        }
-        #probabilitySlider {
-            width: 200px;
-            height: 6px;
-            border-radius: 3px;
-            outline: none;
-            background: #dcdfe6;
-            -webkit-appearance: none;
-            cursor: pointer;
-        }
-        #probabilitySlider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #409eff;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        }
-        .rule-desc {
-            font-size: 13px;
-            color: #409eff;
-            background: #ecf5ff;
-            padding: 4px 10px;
-            border-radius: 6px;
-            margin-top: 8px;
-        }
-        .notice {
-            font-size: 20px;
-            color: #ff8e94;
-            background: #ffe4ef;
-            padding: 4px 10px;
-            border-radius: 8px;
-            margin-top: 8px;
-        }
-        /* 按钮组样式 */
-        .btn-group {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        button {
-            padding: 12px 32px;
-            font-size: 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        #regenerateBtn {
-            background-color: #409eff;
-            color: white;
-        }
-        #regenerateBtn:hover {
-            background-color: #66b1ff;
-            box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
-        }
-        #continueBtn {
-            background-color: #67c23a;
-            color: white;
-        }
-        #continueBtn:hover:not(:disabled) {
-            background-color: #85ce61;
-            box-shadow: 0 4px 12px rgba(103, 194, 58, 0.4);
-        }
-        #continueBtn:disabled {
-            background-color: #c0c4cc;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        /* 结果区域样式 */
-        #result {
-            width: max-content;
-            min-width: 100%;
-            max-width: 800px;
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            font-size: 13px;
-            line-height: 1.6;
-            white-space: normal;
-            overflow: visible;
-        }
-        .num-item {
-            white-space: nowrap;
-            width: max-content;
-            font-weight: bold;
-            display: block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin-right: 12px;
-            margin-bottom: 4px;
-            transition: background-color 0.2s;
-        }
-        .num-item:hover {
-            background-color: #e8f3ff;
-        }
-    
-        .moved-red {
-            color: red !important;
-            font-weight: bold;
-        }
-        .blue-streak-gold {
-            color: #d4af37;
-            font-weight: bold;
-        }
-        .white-streak-red {
-            color: #ff9999;
-            font-weight: bold;
-        }
-
-
-        .result-scroll {
-            width: 100%;
-            max-width: 800px;
-            overflow-x: auto;
-            overflow-y: hidden;
-            white-space: nowrap;
-            background: white;
-            border-radius: 12px;
-        }
-
-        .result-scroll #result {
-            white-space: nowrap;
-            width: max-content;
-            min-width: 100%;
-        }
-
-        .result-scroll .num-item {
-            white-space: nowrap;
-            display: block;
-            width: max-content;
-        }
-
-
-        .permanent-red {
-            color: darkred !important;
-            font-weight: bold;
-        }
-        .weight-title { font-size:14px; font-weight:bold; margin:12px 0 4px; }
+		.result-scroll {
+			width: 100%;
+			max-width: 800px;
+			overflow-x: auto;
+			overflow-y: hidden;
+			white-space: nowrap;
+			background: white;
+			border-radius: 12px;
+		}
+		.result-scroll #result {
+			white-space: nowrap;
+			width: max-content;
+			min-width: 100%;
+		}
+		.result-scroll .num-item {
+			white-space: nowrap;
+			display: block;
+			width: max-content;
+		}
+		.permanent-red {
+			color: darkred !important;
+			font-weight: bold;
+		}
+		.weight-title { font-size:14px; font-weight:bold; margin:12px 0 4px; }
 .section-title {font-size:18px;font-weight:bold;margin:18px 0 8px;}
 .dynamic-weight-box{margin-top:10px;padding:8px;background:#f8f8f8;border-radius:6px}
 .weight-input{width:100px;padding:4px 10px;border:1px solid #dcdfe6;border-radius:6px;font-size:14px;outline:none}.weight-input:focus{border-color:#409eff}.dynamicWeightRow{display:flex;gap:16px;flex-wrap:wrap}.weight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0px 16px;width:100%}.dynamicWeightRow .control-row{margin-bottom:8px}.force-pair{display:inline-flex;width:48%;vertical-align:top}.dynamicFaultRepairBox{display:flex}.rule-control .force-pair:nth-of-type(even){margin-left:2%}
 \n</style>
 </head>
 <body>
-    <!-- 规则控制区域 -->
-    <div class="rule-control">
-        <div class="control-row">
-            <span class="control-label">模拟规则：</span>
-            <select id="modeSelect">
-                <option value="randomFixed">固定数目模式（随机a台车辆不出车）</option>
-                <option value="float">浮动数目模式（随机[a-(向下浮动值)至a+(向上浮动值)]台车辆不出车）</option>
-                <option value="interval">固定间隔模式（每隔[a-1]台车辆会有一台车辆不出车）</option>
-                <option value="probability">概率模式（每台车辆有a%概率不出车）</option>
-            </select>
-        </div>
-        <div class="control-row">
-            <span class="control-label">故障机制：</span>
-            <label><input type="checkbox" id="faultEnable"><span class="span-font"> 启用故障机制</span></label>
-            <span class="span-font">故障车辆上限：</span>
-            <select id="faultLimitMode">
-                <option value="unlimited">无限制</option>
-                <option value="custom">自定义</option>
-            </select>
-            <input type="number" id="faultLimitInput" value="2" min="0" style="width:100px" disabled>
-        </div>
-        <div id="dynamicFaultProbBox"></div>
-        <div id="dynamicFaultRepairBox"></div>
-        <div class="control-row">
-            <span class="control-label">报废机制：</span>
-            <label><input type="checkbox" id="permanentFaultEnable"><span class="span-font"> 启用报废机制</span></label>
-            <span class="span-font">报废车辆上限：</span>
-            <select id="permanentLimitMode">
-                <option value="unlimited">无限制</option>
-                <option value="custom">自定义</option>
-            </select>
-            <input type="number" id="permanentLimitInput" value="2" min="0" style="width:100px" disabled>
-        </div>
-        <div id="dynamicPermanentProbBox"></div>
-        <div class="control-row" id="weightTitleControl" style="display:none;">
-            <span class="control-label">车型名称：</span>
+	<!-- 规则控制区域 -->
+	<div class="rule-control">
+		<div class="control-row">
+			<span class="control-label">模拟规则：</span>
+			<select id="modeSelect">
+				<option value="randomFixed">固定数目模式（随机a台车辆不出车）</option>
+				<option value="float">浮动数目模式（随机[a-(向下浮动值)至a+(向上浮动值)]台车辆不出车）</option>
+				<option value="interval">固定间隔模式（每隔[a-1]台车辆会有一台车辆不出车）</option>
+				<option value="probability">概率模式（每台车辆有a%概率不出车）</option>
+			</select>
+		</div>
+		<div class="control-row">
+			<span class="control-label">故障机制：</span>
+			<label><input type="checkbox" id="faultEnable"><span class="span-font"> 启用故障机制</span></label>
+			<span class="span-font">故障车辆上限：</span>
+			<select id="faultLimitMode">
+				<option value="unlimited">无限制</option>
+				<option value="custom">自定义</option>
+			</select>
+			<input type="number" id="faultLimitInput" value="2" min="0" style="width:100px" disabled>
+		</div>
+		<div id="dynamicFaultProbBox"></div>
+		<div id="dynamicFaultRepairBox"></div>
+		<div class="control-row">
+			<span class="control-label">报废机制：</span>
+			<label><input type="checkbox" id="permanentFaultEnable"><span class="span-font"> 启用报废机制</span></label>
+			<span class="span-font">报废车辆上限：</span>
+			<select id="permanentLimitMode">
+				<option value="unlimited">无限制</option>
+				<option value="custom">自定义</option>
+			</select>
+			<input type="number" id="permanentLimitInput" value="2" min="0" style="width:100px" disabled>
+		</div>
+		<div id="dynamicPermanentProbBox"></div>
+		<div class="control-row" id="weightTitleControl" style="display:none;">
+			<span class="control-label">车型名称：</span>
 			<label><input type="checkbox" id="weightTitleEnable" checked><span class="span-font"> 显示车型名称</span></label>
 		</div>
 <div id="dynamicWeightNameBox"></div>
 
-        <div class="control-row">
-            <span class="control-label">记录上限：</span>
-            <label><input type="checkbox" id="blockLimitEnable"><span class="span-font"> 启用上限功能（每台车辆后只保留最后x条记录，超出部分自动删除）</span></label>
-            <input type="number" id="blockLimitInput" value="10" min="1" style="width:100px">
-        </div>
+		<div class="control-row">
+			<span class="control-label">记录上限：</span>
+			<label><input type="checkbox" id="blockLimitEnable"><span class="span-font"> 启用上限功能（每台车辆后只保留最后x条记录，超出部分自动删除）</span></label>
+			<input type="number" id="blockLimitInput" value="10" min="1" style="width:100px">
+		</div>
 
-        <div class="control-row">
-            <span class="control-label">强制出车：</span>
-            <input type="text" id="forceBlueInput" placeholder="数字 空格/斜杠分隔">
-            <label><input type="checkbox" id="forceBlueReduce" ><span class="span-font"> 减少不出车名额</span></label>
-        </div>
-        <div class="control-row">
-            <span class="control-label">强制不出：</span>
-            <input type="text" id="forceWhiteInput" placeholder="数字 空格/斜杠分隔">
-            <label><input type="checkbox" id="forceWhiteOccupy" checked><span class="span-font"> 占用不出车名额</span></label>
-        </div>
-        <div class="control-row">
-            <span class="control-label">强制故障：</span>
-            <input type="text" id="forceFaultInput" placeholder="数字 空格/斜杠分隔">
-        </div>
-        <div class="control-row">
-            <span class="control-label">强制报废：</span>
-            <input type="text" id="forcePermanentInput" placeholder="数字 空格/斜杠分隔">
-        </div>
+		<div class="control-row">
+			<span class="control-label">强制出车：</span>
+			<input type="text" id="forceBlueInput" placeholder="数字 空格/斜杠分隔">
+			<label><input type="checkbox" id="forceBlueReduce" ><span class="span-font"> 减少不出车名额</span></label>
+		</div>
+		<div class="control-row">
+			<span class="control-label">强制不出：</span>
+			<input type="text" id="forceWhiteInput" placeholder="数字 空格/斜杠分隔">
+			<label><input type="checkbox" id="forceWhiteOccupy" checked><span class="span-font"> 占用不出车名额</span></label>
+		</div>
+		<div class="control-row">
+			<span class="control-label">强制故障：</span>
+			<input type="text" id="forceFaultInput" placeholder="数字 空格/斜杠分隔">
+		</div>
+		<div class="control-row">
+			<span class="control-label">强制报废：</span>
+			<input type="text" id="forcePermanentInput" placeholder="数字 空格/斜杠分隔">
+		</div>
 
-        <div class="control-row">
-            <span class="control-label">[a]：</span>
-            <input type="number" id="aInput" value="5" min="0">
-            <input type="range" id="probabilitySlider" min="0" max="100" value="5" step="1">
-        </div>
+		<div class="control-row">
+			<span class="control-label">[a]：</span>
+			<input type="number" id="aInput" value="5" min="0">
+			<input type="range" id="probabilitySlider" min="0" max="100" value="5" step="1">
+		</div>
 
-        <div class="control-row" id="floatSettingRow" style="display:none;">
-            <span class="control-label">浮动设置：</span>
-            <span class="span-font">向下浮动值：</span>
-            <input type="number" id="floatDownInput" value="3" min="0" style="width:100px">
-            <span class="span-font">向上浮动值：</span>
-            <input type="number" id="floatUpInput" value="2" min="0" style="width:100px">
-        </div>
-        <div class="rule-desc" id="ruleDesc">当前规律：固定数目模式 | a=5 → 随机选择5台车辆不出车，其余出车</div>
-        <div class="notice" id="notice">注意事项：本程序仅供娱乐使用，由本程序生成的车辆数据无法代表实际情况！<br>本程序灵感来源：微信小程序[客滚查]<br>本程序绝大多数代码由ChatGPT编写，因此可能存在代码混乱/格式不一等小问题。<br>如发现任何Bug请汇报，在此表示感谢。<br>作者Github：https://github.com/sun2469</div>
-    </div>
-    <div class="btn-group">
-        <button id="regenerateBtn">开始/重新生成</button>
-        <button id="continueBtn" disabled>继续生成</button>
-        <button id="exportStateBtn">导出车辆状态</button>
-        <button id="importStateBtn">导入车辆状态</button>
-        <input type="file" id="importStateFile" accept="application/json" style="display:none">
-    </div>
-    <div class="result-scroll"><div id="result"></div></div>
+		<div class="control-row" id="floatSettingRow" style="display:none;">
+			<span class="control-label">浮动设置：</span>
+			<span class="span-font">向下浮动值：</span>
+			<input type="number" id="floatDownInput" value="3" min="0" style="width:100px">
+			<span class="span-font">向上浮动值：</span>
+			<input type="number" id="floatUpInput" value="2" min="0" style="width:100px">
+		</div>
+		<div class="rule-desc" id="ruleDesc">当前规律：固定数目模式 | a=5 → 随机选择5台车辆不出车，其余出车</div>
+		<div class="notice" id="notice">注意事项：本程序仅供娱乐使用，由本程序生成的车辆数据无法代表实际情况！<br>本程序灵感来源：微信小程序[客滚查]<br>本程序绝大多数代码由ChatGPT编写，因此可能存在代码混乱/格式不一等小问题。<br>如发现任何Bug请汇报，在此表示感谢。<br>作者Github：https://github.com/sun2469</div>
+	</div>
+	<div class="btn-group">
+		<button id="regenerateBtn">开始/重新生成</button>
+		<button id="continueBtn" disabled>继续生成</button>
+		<button id="exportStateBtn">导出车辆状态</button>
+		<button id="importStateBtn">导入车辆状态</button>
+		<input type="file" id="importStateFile" accept="application/json" style="display:none">
+	</div>
+	<div class="result-scroll"><div id="result"></div></div>
 
-    <script>
-        // 全局状态
-        let currentNumList = [];
-        let currentA = 5;
-        let floatDown = 3;
-        let floatUp = 2;
-        let faultIndexes = new Set();
-        let permanentFaultIndexes = new Set();
-        let faultLimit = Infinity;
-        let currentMode = 'randomFixed'; // interval 固定间隔, randomFixed 固定数目, float 浮动数目, probability 概率模式
-        let blockLimitEnabled = false;
-        let blockLimit = Infinity;
-        let whiteStreakCount = [];
-        let blueStreakCount = [];
-        // 连续出车奖励独立保存，避免修改方块上限时被DOM刷新清除
-        let goldIndexes = new Set();
-        let movedToBottom = new Set();
-        let weightGroups = [];
-        let currentMarks = [];
-        let blockHistory = [];
-        let weightNamesEnabled = true;
-        let weightTitleEnabled = true;
-        const wt=document.getElementById("weightTitleEnable");
-        addEventListener("change", () => {
-				weightTitleEnabled=wt.checked; 
-				if(currentNumList.length) resultDiv.innerHTML=renderByWeightGroups();
+	<script>
+		let currentNumList = [];
+		let currentA = 5;
+		let floatDown = 3;
+		let floatUp = 2;
+		let faultIndexes = new Set();
+		let permanentFaultIndexes = new Set();
+		let faultLimit = Infinity;
+		let currentMode = 'randomFixed';
+		let blockLimitEnabled = false;
+		let blockLimit = Infinity;
+		let whiteStreakCount = [];
+		let blueStreakCount = [];
+		let goldIndexes = new Set();
+		let movedToBottom = new Set();
+		let weightGroups = [];
+		let currentMarks = [];
+		let blockHistory = [];
+		let weightNamesEnabled = true;
+		let weightTitleEnabled = true;
+		const wt = document.getElementById("weightTitleEnable");
+		addEventListener("change", () => {
+			weightTitleEnabled = wt.checked;
+			if (currentNumList.length) resultDiv.innerHTML = renderByWeightGroups()
 		});
-        let permanentFaultLimit = Infinity;
-        let weightFaultSettings = [];
-let forceBlueIndexes = new Set();
-let forceWhiteIndexes = new Set();
-let forceFaultIndexes = new Set();
-let forcePermanentIndexes = new Set();
+		let permanentFaultLimit = Infinity;
+		let weightFaultSettings = [];
+		let forceBlueIndexes = new Set();
+		let forceWhiteIndexes = new Set();
+		let forceFaultIndexes = new Set();
+		let forcePermanentIndexes = new Set();
+		const regenerateBtn = document.getElementById('regenerateBtn');
+		const continueBtn = document.getElementById('continueBtn');
+		const resultDiv = document.getElementById('result');
+		const modeSelect = document.getElementById('modeSelect');
+		const aInput = document.getElementById('aInput');
+		const probabilitySlider = document.getElementById('probabilitySlider');
+		const ruleDesc = document.getElementById('ruleDesc');
+		const faultEnable = document.getElementById('faultEnable');
+		const faultLimitMode = document.getElementById('faultLimitMode');
+		const faultLimitInput = document.getElementById('faultLimitInput');
+		const permanentFaultEnable = document.getElementById('permanentFaultEnable');
+		const permanentFaultCreateProb = null;
+		const faultCreateProb = null;
+		const faultRepairProb = null;
+		const blockLimitEnable = document.getElementById('blockLimitEnable');
+		const blockLimitInput = document.getElementById('blockLimitInput');
+		const floatDownInput = document.getElementById('floatDownInput');
+		const floatUpInput = document.getElementById('floatUpInput');
+		const floatSettingRow = document.getElementById('floatSettingRow');
+		const forceBlueInput = document.getElementById('forceBlueInput');
+		const forceWhiteInput = document.getElementById('forceWhiteInput');
+		const forceFaultInput = document.getElementById('forceFaultInput');
+		const forcePermanentInput = document.getElementById('forcePermanentInput');
 
-        const regenerateBtn = document.getElementById('regenerateBtn');
-        const continueBtn = document.getElementById('continueBtn');
-        const resultDiv = document.getElementById('result');
-        const modeSelect = document.getElementById('modeSelect');
-        const aInput = document.getElementById('aInput');
-        const probabilitySlider = document.getElementById('probabilitySlider');
-        const ruleDesc = document.getElementById('ruleDesc');
-        const faultEnable = document.getElementById('faultEnable');
-        const faultLimitMode = document.getElementById('faultLimitMode');
-        const faultLimitInput = document.getElementById('faultLimitInput');
-        const permanentFaultEnable = document.getElementById('permanentFaultEnable');
-        const permanentFaultCreateProb = null;
-        const faultCreateProb = null;
-        const faultRepairProb = null;
-        const blockLimitEnable = document.getElementById('blockLimitEnable');
-        const blockLimitInput = document.getElementById('blockLimitInput');
-const floatDownInput=document.getElementById('floatDownInput');
-const floatUpInput=document.getElementById('floatUpInput');
-const floatSettingRow=document.getElementById('floatSettingRow');
-const forceBlueInput=document.getElementById('forceBlueInput');
-const forceWhiteInput=document.getElementById('forceWhiteInput');
-const forceFaultInput=document.getElementById('forceFaultInput');
-const forcePermanentInput=document.getElementById('forcePermanentInput');
-
-function parseManualIndexes(input){
-    const vals=(input.value||'').split(/[\s\/]+/).filter(Boolean);
-    const set=new Set();
-    vals.forEach(v=>{
-        currentNumList.forEach((n,i)=>{
-            if(String(n.original)===String(v)) set.add(i);
-        });
-    });
-    return set;
-}
-function refreshManualOverrides(){
-    forceBlueIndexes=parseManualIndexes(forceBlueInput);
-    forceWhiteIndexes=parseManualIndexes(forceWhiteInput);
-    forceFaultIndexes=parseManualIndexes(forceFaultInput);
-    forcePermanentIndexes=parseManualIndexes(forcePermanentInput);
-    forceBlueIndexes.forEach(i=>{
-        faultIndexes.delete(i); permanentFaultIndexes.delete(i);
-    });
-    forceWhiteIndexes.forEach(i=>{
-        faultIndexes.delete(i); permanentFaultIndexes.delete(i);
-    });
-    forceFaultIndexes.forEach(i=>{
-        permanentFaultIndexes.delete(i); faultIndexes.add(i);
-        /*faultIndexes.delete(i);*/
-    });
-    forcePermanentIndexes.forEach(i=>{
-        faultIndexes.delete(i); forceFaultIndexes.delete(i); permanentFaultIndexes.add(i)
-    });
-}
-[blockLimitInput,forceBlueInput,forceWhiteInput,forceFaultInput,forcePermanentInput].forEach(x=>{
-    if(x) x.addEventListener('change',()=>{refreshManualOverrides(); if(currentNumList.length) continueBtn.click();});
-});
-
-
-
-
-        
-function createWeightInputs(){
-    const f=document.getElementById('dynamicFaultProbBox');
-    const r=document.getElementById('dynamicFaultRepairBox');
-    const p=document.getElementById('dynamicPermanentProbBox');
-    const n=document.getElementById('dynamicWeightNameBox');
-    f.innerHTML=''; r.innerHTML=''; p.innerHTML=''; n.innerHTML='';
-    // 保留已导入的车型参数，不再清空
-    if(!Array.isArray(weightFaultSettings)) weightFaultSettings=[];
-    const oldSettings=weightFaultSettings.slice();
-    weightFaultSettings=[];
-    weightGroups.forEach((g,i)=>{weightFaultSettings[i]=oldSettings[i]||{fault:50,repair:50,permanent:100};});
-    const tc=document.getElementById("weightTitleControl");
-    if(tc) tc.style.display = weightGroups.length ? "flex" : "none";
-
-    const makeGrid=(arr)=>`<div class="weight-grid">${arr.join('')}</div>`;
-    let fArr=[], rArr=[], pArr=[], nArr=[];
-    weightGroups.forEach((g,i)=>{
-        if(!weightFaultSettings[i]) weightFaultSettings[i]={fault:50,repair:50,permanent:100};
-        fArr.push(`<div class="control-row"><span class="span-font">车型${i+1} 故障率 1/</span><input class="weight-input" type="number" min="1" value="${weightFaultSettings[i].fault}" data-type="fault" data-i="${i}"></div>`);
-        rArr.push(`<div class="control-row"><span class="span-font">车型${i+1} 修复率 1/</span><input class="weight-input" type="number" min="1" value="${weightFaultSettings[i].repair}" data-type="repair" data-i="${i}"></div>`);
-        pArr.push(`<div class="control-row"><span class="span-font">车型${i+1} 报废率 1/</span><input class="weight-input" type="number" min="1" value="${weightFaultSettings[i].permanent}" data-type="permanent" data-i="${i}"></div>`);
-        if(weightNamesEnabled)nArr.push(`<div class="control-row"><span class="span-font">车型${i+1} 名称</span><input class="weight-input" data-weight-name="${i}" value="${g.name}"></div>`);
-    });
-    f.innerHTML=makeGrid(fArr);
-    r.innerHTML=makeGrid(rArr);
-    p.innerHTML=makeGrid(pArr);
-    n.innerHTML=makeGrid(nArr);
-
-    document.querySelectorAll('.weight-input').forEach(x=>{
-        const saveWeightInput=()=>{
-            const i=Number(x.dataset.i);
-            if(x.dataset.type && weightFaultSettings[i]){
-                weightFaultSettings[i][x.dataset.type]=Math.max(1,Number(x.value)||1);
-            }
-            if(x.dataset.weightName!==undefined){
-                const idx=Number(x.dataset.weightName);
-                if(weightGroups[idx]) weightGroups[idx].name=x.value;
-                if(currentNumList.length && weightGroups.length) resultDiv.innerHTML=renderByWeightGroups();
-            }
-        };
-        x.addEventListener('change',saveWeightInput);
-        x.addEventListener('input',saveWeightInput);
-        x.addEventListener('blur',saveWeightInput);
-    });
-}
-function getWeightIndex(index){
-    const obj = currentNumList[index];
-    for(let i=0;i<weightGroups.length;i++){
-        if(weightGroups[i].numbers.some(n=>n.original===obj.original)) return i;
-    }
-    return 0;
-}
-
-function renderByWeightGroups() {
-    let html = '<h2 class="section-title">【正常车辆】</h2>';
-    weightGroups.forEach(g=>{
-        if(weightTitleEnabled) html += `<div class="weight-title">${g.name}${g.level ? '（'+g.level+'）' : ''}</div>`;
-        g.numbers.filter(n=>{
-            const index=currentNumList.findIndex(x=>x.original===n.original);
-            return !(permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index) || faultIndexes.has(index) || forceFaultIndexes.has(index)) && !(isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7);
-        }).sort((a,b)=>a.value-b.value).forEach(n=>{
-            const index=currentNumList.findIndex(x=>x.original===n.original);
-            html += `<span class="num-item ${goldIndexes.has(index) ? 'blue-streak-gold' : ''}" data-index="${index}">${n.original} ${renderBlocks(index)}</span>`;
-        });
-    });
-    html += '<h2 class="section-title">【异常车辆】</h2>';
-    weightGroups.forEach(g=>{
-        if(weightTitleEnabled) html += `<div class="weight-title">${g.name}${g.level ? '（'+g.level+'）' : ''}</div>`;
-        g.numbers.filter(n=>{
-            const index=currentNumList.findIndex(x=>x.original===n.original);
-            return (permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index) || faultIndexes.has(index) || forceFaultIndexes.has(index)) || (isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7);
-        }).sort((a,b)=>a.value-b.value).forEach(n=>{
-            const index=currentNumList.findIndex(x=>x.original===n.original);
-            const cls=(permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index))?'permanent-red':((faultIndexes.has(index) || forceFaultIndexes.has(index))?'moved-red':((isLatestWhite(index) && (whiteStreakCount[index]||0)>=7)?'white-streak-red':(goldIndexes.has(index)?'blue-streak-gold':'moved-red')));
-            html += `<span class="num-item ${cls}" data-index="${index}">${n.original} ${renderBlocks(index)}</span>`;
-        });
-    });
-    return html;
-}
-
-
-function parseWeightedNumbers(input) {
-    const groups = input
-        .split('/')
-        .map(x => x.trim())
-        .filter(x => x.length > 0);
-
-    const result = [];
-    weightGroups = [];
-
-    groups.forEach((group, index) => {
-        const nums = [];
-        group
-            .replace(/[\[\]]/g, ' ')
-            .split(/[\s,]+/)
-            .filter(Boolean)
-            .forEach(v => {
-                if (/^\d+$/.test(v)) {
-                    nums.push({
-                        original: v,
-                        value: Number(v),
-                        weight: index
-                    });
-                }
-            });
-
-        if (nums.length > 0) {
-            nums.sort((a,b)=>a.value-b.value);
-            weightGroups.push({
-                name: `车型${index+1}`,
-                numbers: nums
-            });
-            result.push(...nums);
-        }
-    });
-
-    return result;
-}
-
-// 根据真实方块历史判断最新颜色，避免 currentMarks 与显示不同步
-function isLatestWhite(index){
-    const h = blockHistory[index] || [];
-    return h.length > 0 && h[h.length-1] === '⬜';
-}
-
-function trimBlockHistory(){
-    if(!blockLimitEnabled) return;
-    for(let i=0;i<blockHistory.length;i++){
-        while((blockHistory[i]||[]).length > blockLimit){
-            blockHistory[i].shift();
-        }
-    }
-    document.querySelectorAll('.num-item').forEach(applyBlockLimit);
-    // 方块上限只裁剪显示历史，不允许影响连续出车奖励状态
-    restoreSpecialColors();
-}
-
-// 不出车连续次数移动机制
-        function updateWhiteStreak(index, isWhite) {
-            if (!whiteStreakCount[index]) whiteStreakCount[index] = 0;
-            if (!blueStreakCount[index]) blueStreakCount[index] = 0;
-
-            if (isWhite) {
-                whiteStreakCount[index]++;
-                blueStreakCount[index] = 0;
-                // 白色出现后，连续出车的奖励失效
-                goldIndexes.delete(index);
-            } else {
-                whiteStreakCount[index] = 0;
-                blueStreakCount[index]++;
-                if (blueStreakCount[index] >= 7) {
-                    goldIndexes.add(index);
-                }
-            }
-        }
-
-        function restoreSpecialColors(){
-    document.querySelectorAll('.num-item').forEach(item=>{
-        const index = Number(item.dataset.index);
-        item.classList.remove('blue-streak-gold');
-        if(goldIndexes.has(index) && !permanentFaultIndexes.has(index) && !forcePermanentIndexes.has(index)){
-            item.classList.add('blue-streak-gold');
-        }
-    });
-}
-
-function updateNumberColors() {
-        document.querySelectorAll('.num-item').forEach(item => {
-                const index = Number(item.dataset.index);
-                item.classList.remove('moved-red', 'white-streak-red', 'blue-streak-gold', 'permanent-red');
-
-                if ((permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index))) {
-                    item.classList.add('permanent-red');
-                } else if ((faultIndexes.has(index) || forceFaultIndexes.has(index))/* && (whiteStreakCount[index] || 0) >= 7*/) {
-                    item.classList.add('moved-red');
-                } else if (isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7 && (!faultIndexes.has(index) && !forceFaultIndexes.has(index))) {
-                    item.classList.add('white-streak-red');
-                } else if (goldIndexes.has(index) || (blueStreakCount[index] || 0) >= 7) {
-                    goldIndexes.add(index);
-                    item.classList.add('blue-streak-gold');
-                }
-            });
-        }
-
-        function reorderMovedNumbers() {
-            // 权重显示模式包含标题和分组，不能重新清空resultDiv，否则会删除【正常数】和权重名称
-            if (weightGroups && weightGroups.length) {
-                updateNumberColors();
-                return;
-            }
-
-            const items = [...resultDiv.querySelectorAll('.num-item')];
-
-            items.sort((a, b) => {
-                const ai = Number(a.dataset.index);
-                const bi = Number(b.dataset.index);
-
-                const aMoved = isLatestWhite(ai) && (whiteStreakCount[ai] || 0) >= 7;
-                const bMoved = isLatestWhite(bi) && (whiteStreakCount[bi] || 0) >= 7;
-
-                if (aMoved !== bMoved) {
-                    return aMoved ? 1 : -1;
-                }
-
-                return Number(currentNumList[ai].value) -
-                       Number(currentNumList[bi].value);
-            });
-
-            resultDiv.innerHTML = '';
-            items.forEach(item => resultDiv.appendChild(item));
-            updateNumberColors();
-        }
-
-        // 更新规则说明文字
-        function updateRuleDesc() {
-            if (currentMode === 'interval') {
-                ruleDesc.textContent = `当前规律：固定间隔模式 | a=${currentA} → 每隔${currentA-1}台车辆会有一台车辆不出车，其余出车`;
-            } else if (currentMode === 'randomFixed') {
-                ruleDesc.textContent = `当前规律：固定数目模式 | a=${currentA} → 随机选择${currentA}台车辆不出车，其余出车`;
-            } else if (currentMode === 'float') {
-				let numMin;
-				if ( currentA-floatDown < 0 ) {
-					numMin = 0
-				} else {
-					numMin = currentA-floatDown
-				}
-                ruleDesc.textContent = `当前规律：浮动数目模式 | a=${currentA} → 随机选择${numMin}至${currentA+floatUp}台车辆不出车，其余出车`;
-            } else {
-                ruleDesc.textContent = `当前规律：概率模式 | a=${currentA} → 每台车有${currentA}%概率不出车，也即有${100-currentA}%概率出车`;
-            }
-        }
-        
-				// 从0~length-1中随机获取count个不重复索引
-		function getRandomIndexes(length, count) {
-			count = Math.max(0, Math.min(count, length));
-
-			let indexes = Array.from({length}, (_, i) => i);
-
-			for (let i = indexes.length - 1; i > 0; i--) {
-				let j = Math.floor(Math.random() * (i + 1));
-				[indexes[i], indexes[j]] = [indexes[j], indexes[i]];
-			}
-
-			return new Set(indexes.slice(0, count));
+		function parseManualIndexes(input) {
+			const vals = (input.value || '').split(/[\s\/]+/).filter(Boolean);
+			const set = new Set();
+			vals.forEach(v => {
+				currentNumList.forEach((n, i) => {
+					if (String(n.original) === String(v)) set.add(i)
+				})
+			});
+			return set
 		}
 
+		function refreshManualOverrides() {
+			forceBlueIndexes = parseManualIndexes(forceBlueInput);
+			forceWhiteIndexes = parseManualIndexes(forceWhiteInput);
+			forceFaultIndexes = parseManualIndexes(forceFaultInput);
+			forcePermanentIndexes = parseManualIndexes(forcePermanentInput);
+			forceBlueIndexes.forEach(i => {
+				faultIndexes.delete(i);
+				permanentFaultIndexes.delete(i)
+			});
+			forceWhiteIndexes.forEach(i => {
+				faultIndexes.delete(i);
+				permanentFaultIndexes.delete(i)
+			});
+			forceFaultIndexes.forEach(i => {
+				permanentFaultIndexes.delete(i);
+				faultIndexes.add(i)
+			});
+			forcePermanentIndexes.forEach(i => {
+				faultIndexes.delete(i);
+				forceFaultIndexes.delete(i);
+				permanentFaultIndexes.add(i)
+			})
+		} [blockLimitInput, forceBlueInput, forceWhiteInput, forceFaultInput, forcePermanentInput].forEach(x => {
+			if (x) x.addEventListener('change', () => {
+				refreshManualOverrides();
+				if (currentNumList.length) continueBtn.click()
+			})
+		});
 
-        // 故障车机制
-        function updateFaults(numLength) {
-    // 关闭报废车机制：报废车降级为故障车
-    if (!permanentFaultEnable.checked){
-        permanentFaultIndexes.forEach(i=>{
-            if(!forcePermanentIndexes.has(i)) {
-				permanentFaultIndexes.delete(i);faultIndexes.add(i);
+		function createWeightInputs() {
+			const f = document.getElementById('dynamicFaultProbBox');
+			const r = document.getElementById('dynamicFaultRepairBox');
+			const p = document.getElementById('dynamicPermanentProbBox');
+			const n = document.getElementById('dynamicWeightNameBox');
+			f.innerHTML = '';
+			r.innerHTML = '';
+			p.innerHTML = '';
+			n.innerHTML = '';
+			if (!Array.isArray(weightFaultSettings)) weightFaultSettings = [];
+			const oldSettings = weightFaultSettings.slice();
+			weightFaultSettings = [];
+			weightGroups.forEach((g, i) => {
+				weightFaultSettings[i] = oldSettings[i] || {
+					fault: 50,
+					repair: 50,
+					permanent: 100
+				}
+			});
+			const tc = document.getElementById("weightTitleControl");
+			if (tc) tc.style.display = weightGroups.length ? "flex" : "none";
+			const makeGrid = (arr) => `<div class="weight-grid">${arr.join('')}</div>`;
+			let fArr = [],
+				rArr = [],
+				pArr = [],
+				nArr = [];
+			weightGroups.forEach((g, i) => {
+				if (!weightFaultSettings[i]) weightFaultSettings[i] = {
+					fault: 50,
+					repair: 50,
+					permanent: 100
+				};
+				fArr.push(`<div class="control-row"><span class="span-font">车型${i+1}故障率1/</span><input class="weight-input"type="number"min="1"value="${weightFaultSettings[i].fault}"data-type="fault"data-i="${i}"></div>`);
+				rArr.push(`<div class="control-row"><span class="span-font">车型${i+1}修复率1/</span><input class="weight-input"type="number"min="1"value="${weightFaultSettings[i].repair}"data-type="repair"data-i="${i}"></div>`);
+				pArr.push(`<div class="control-row"><span class="span-font">车型${i+1}报废率1/</span><input class="weight-input"type="number"min="1"value="${weightFaultSettings[i].permanent}"data-type="permanent"data-i="${i}"></div>`);
+				if (weightNamesEnabled) nArr.push(`<div class="control-row"><span class="span-font">车型${i+1}名称</span><input class="weight-input"data-weight-name="${i}"value="${g.name}"></div>`)
+			});
+			f.innerHTML = makeGrid(fArr);
+			r.innerHTML = makeGrid(rArr);
+			p.innerHTML = makeGrid(pArr);
+			n.innerHTML = makeGrid(nArr);
+			document.querySelectorAll('.weight-input').forEach(x => {
+				const saveWeightInput = () => {
+					const i = Number(x.dataset.i);
+					if (x.dataset.type && weightFaultSettings[i]) {
+						weightFaultSettings[i][x.dataset.type] = Math.max(1, Number(x.value) || 1)
+					}
+					if (x.dataset.weightName !== undefined) {
+						const idx = Number(x.dataset.weightName);
+						if (weightGroups[idx]) weightGroups[idx].name = x.value;
+						if (currentNumList.length && weightGroups.length) resultDiv.innerHTML = renderByWeightGroups()
+					}
+				};
+				x.addEventListener('change', saveWeightInput);
+				x.addEventListener('input', saveWeightInput);
+				x.addEventListener('blur', saveWeightInput)
+			})
+		}
+
+		function getWeightIndex(index) {
+			const obj = currentNumList[index];
+			for (let i = 0; i < weightGroups.length; i++) {
+				if (weightGroups[i].numbers.some(n => n.original === obj.original)) return i
 			}
-        });
-    }
+			return 0
+		}
 
-    // 先生成普通故障车
-    for(let i=0;i<numLength;i++){
-        const w=getWeightIndex(i);
-        const cfg=weightFaultSettings[w]||{fault:50,repair:50,permanent:100};
-        if(faultIndexes.has(i) && !forceFaultIndexes.has(i) && Math.random()<1/cfg.repair){
-            faultIndexes.delete(i);
-        }
-        if(!faultIndexes.has(i) && !forceFaultIndexes.has(i) && !permanentFaultIndexes.has(i) && !forcePermanentIndexes.has(i) && !forceBlueIndexes.has(i) && !forceWhiteIndexes.has(i) && faultEnable.checked && faultIndexes.size<faultLimit && Math.random()<1/cfg.fault){
-            faultIndexes.add(i);
-        }
-    }
+		function renderByWeightGroups() {
+			let html = '<h2 class="section-title">【正常车辆】</h2>';
+			weightGroups.forEach(g => {
+				if (weightTitleEnabled) html += `<div class="weight-title">${g.name}${g.level?'（'+g.level+'）':''}</div>`;
+				g.numbers.filter(n => {
+					const index = currentNumList.findIndex(x => x.original === n.original);
+					return !(permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index) || faultIndexes.has(index) || forceFaultIndexes.has(index)) && !(isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7)
+				}).sort((a, b) => a.value - b.value).forEach(n => {
+					const index = currentNumList.findIndex(x => x.original === n.original);
+					html += `<span class="num-item ${goldIndexes.has(index) ? 'blue-streak-gold' : ''}"data-index="${index}">${n.original}${renderBlocks(index)}</span>`
+				})
+			});
+			html += '<h2 class="section-title">【异常车辆】</h2>';
+			weightGroups.forEach(g => {
+				if (weightTitleEnabled) html += `<div class="weight-title">${g.name}${g.level?'（'+g.level+'）':''}</div>`;
+				g.numbers.filter(n => {
+					const index = currentNumList.findIndex(x => x.original === n.original);
+					return (permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index) || faultIndexes.has(index) || forceFaultIndexes.has(index)) || (isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7)
+				}).sort((a, b) => a.value - b.value).forEach(n => {
+					const index = currentNumList.findIndex(x => x.original === n.original);
+					const cls = (permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index)) ? 'permanent-red' : ((faultIndexes.has(index) || forceFaultIndexes.has(index)) ? 'moved-red' : ((isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7) ? 'white-streak-red' : (goldIndexes.has(index) ? 'blue-streak-gold' : 'moved-red')));
+					html += `<span class="num-item ${cls}"data-index="${index}">${n.original}${renderBlocks(index)}</span>`
+				})
+			});
+			return html
+		}
 
-    // 报废车生成：允许从所有车中生成，不再依赖故障
-    if(permanentFaultEnable.checked){
-        for(let i=0;i<numLength;i++){
-            if(permanentFaultIndexes.has(i) || forcePermanentIndexes.has(i) || forceFaultIndexes.has(i) || forceBlueIndexes.has(i) || forceWhiteIndexes.has(i)) continue;
-            if(permanentFaultIndexes.size>=permanentFaultLimit) break;
-            const w=getWeightIndex(i);
-            const cfg=weightFaultSettings[w]||{permanent:100};
-            if(Math.random()<1/cfg.permanent){
-                permanentFaultIndexes.add(i);
-                faultIndexes.delete(i);
-            }
-        }
-        forcePermanentIndexes.forEach(i=>permanentFaultIndexes.add(i));
-    }
-}
-// 不出车名额分配：强制不出车/出车是否影响名额由对应开关决定
-function getFixedWhiteIndexes(total, count){
-    const result=new Set();
-
-    const occupyWhite = document.getElementById('forceWhiteOccupy')?.checked;
-    const reduceBlue = document.getElementById('forceBlueReduce')?.checked;
-
-    // 故障车/报废车优先占用不出车名额
-    faultIndexes.forEach(i=>result.add(i));
-    forceFaultIndexes.forEach(i=>result.add(i));
-    permanentFaultIndexes.forEach(i=>result.add(i));
-    forcePermanentIndexes.forEach(i=>result.add(i));
-
-    if (occupyWhite) {
-        forceWhiteIndexes.forEach(i=>result.add(i));
-    }
-
-    const candidates=[];
-    for(let i=0;i<total;i++){
-        if(!result.has(i) && !forceBlueIndexes.has(i) && !(occupyWhite && forceWhiteIndexes.has(i))) candidates.push(i);
-    }
-
-    let need=count-result.size;
-    if (reduceBlue) need-=forceBlueIndexes.size;
-    need=Math.max(0,need);
-
-    const extra=getRandomIndexes(candidates.length,need);
-    candidates.forEach((v,i)=>{if(extra.has(i)) result.add(v);});
-
-    if (!occupyWhite) {
-        forceWhiteIndexes.forEach(i=>result.add(i));
-    }
-    return result;
-}
-
-// 浮动模式同样遵守强制颜色名额规则
-function getFloatWhiteIndexes(total, count){
-    // 浮动模式与固定数目模式保持一致：故障/报废优先占用不出车名额，
-    // 当故障已经占满名额时，不再额外产生白色方块。
-    return getFixedWhiteIndexes(total, count);
-}
-
-function applyFaultMarks(indexes, total, needCount) {
-            const result = new Set();
-
-            // 故障车永远优先占用不出车名额
-            faultIndexes.forEach(i => result.add(i));
-            permanentFaultIndexes.forEach(i => result.add(i));
-
-            // 如果故障车已经达到或超过不出车数量，则只保留故障
-            if (result.size >= needCount) {
-                return result;
-            }
-
-            indexes.forEach(i => {
-                if (result.size < needCount) {
-                    result.add(i);
-                }
-            });
-
-            while (result.size < needCount) {
-                const candidates = [];
-                for (let i = 0; i < total; i++) {
-                    if (!result.has(i)) candidates.push(i);
-                }
-                if (!candidates.length) break;
-                result.add(candidates[Math.floor(Math.random() * candidates.length)]);
-            }
-
-            return result;
-        }
-
-        permanentFaultEnable.addEventListener('change', () => {
-            if (!permanentFaultEnable.checked) {
-				permanentFaultIndexes.forEach(i=>{
-					if(!forcePermanentIndexes.has(i)) {
-						permanentFaultIndexes.delete(i);faultIndexes.add(i);
+		function parseWeightedNumbers(input) {
+			const groups = input.split('/').map(x => x.trim()).filter(x => x.length > 0);
+			const result = [];
+			weightGroups = [];
+			groups.forEach((group, index) => {
+				const nums = [];
+				group.replace(/[\[\]]/g, ' ').split(/[\s,]+/).filter(Boolean).forEach(v => {
+					if (/^\d+$/.test(v)) {
+						nums.push({
+							original: v,
+							value: Number(v),
+							weight: index
+						})
 					}
 				});
-                document.querySelectorAll('.num-item').forEach(item => item.classList.remove('permanent-red'));
-                updateNumberColors();
-            }
-        });
+				if (nums.length > 0) {
+					nums.sort((a, b) => a.value - b.value);
+					weightGroups.push({
+						name: `车型${index+1}`,
+						numbers: nums
+					});
+					result.push(...nums)
+				}
+			});
+			return result
+		}
 
-        faultLimitMode.addEventListener('change',()=>{
-            faultLimitInput.disabled = faultLimitMode.value !== 'custom';
-            faultLimit = faultLimitMode.value === 'unlimited' ? Infinity : Math.max(0, Number(faultLimitInput.value)||0);
-        });
-        faultLimitInput.addEventListener('input',()=>{
-            faultLimit = Math.max(0, Number(faultLimitInput.value)||0);
-        });
+		function isLatestWhite(index) {
+			const h = blockHistory[index] || [];
+			return h.length > 0 && h[h.length - 1] === '⬜'
+		}
 
-        // 旧版固定故障概率输入框已改为动态权重输入框，此处保留兼容保护
-        if (faultCreateProb) {
-            faultCreateProb.addEventListener('change', () => {
-                if (Number(faultCreateProb.value) < 1 || !Number.isFinite(Number(faultCreateProb.value))) {
-                    faultCreateProb.value = 50;
-                }
-            });
-        }
-        if (faultRepairProb) {
-            faultRepairProb.addEventListener('change', () => {
-                if (Number(faultRepairProb.value) < 1 || !Number.isFinite(Number(faultRepairProb.value))) {
-                    faultRepairProb.value = 50;
-                }
-            });
-        }
+		function trimBlockHistory() {
+			if (!blockLimitEnabled) return;
+			for (let i = 0; i < blockHistory.length; i++) {
+				while ((blockHistory[i] || []).length > blockLimit) {
+					blockHistory[i].shift()
+				}
+			}
+			document.querySelectorAll('.num-item').forEach(applyBlockLimit);
+			restoreSpecialColors()
+		}
 
+		function updateWhiteStreak(index, isWhite) {
+			if (!whiteStreakCount[index]) whiteStreakCount[index] = 0;
+			if (!blueStreakCount[index]) blueStreakCount[index] = 0;
+			if (isWhite) {
+				whiteStreakCount[index]++;
+				blueStreakCount[index] = 0;
+				goldIndexes.delete(index)
+			} else {
+				whiteStreakCount[index] = 0;
+				blueStreakCount[index]++;
+				if (blueStreakCount[index] >= 7) {
+					goldIndexes.add(index)
+				}
+			}
+		}
 
-        
-document.getElementById('permanentLimitMode').addEventListener('change',()=>{
- const m=document.getElementById('permanentLimitMode');
- const x=document.getElementById('permanentLimitInput');
- x.disabled=m.value!=='custom';
- permanentFaultLimit=m.value==='unlimited'?Infinity:Math.max(0,Number(x.value)||0);
-});
-document.getElementById('permanentLimitInput').addEventListener('input',e=>{
- permanentFaultLimit=Math.max(0,Number(e.target.value)||0);
-});
+		function restoreSpecialColors() {
+			document.querySelectorAll('.num-item').forEach(item => {
+				const index = Number(item.dataset.index);
+				item.classList.remove('blue-streak-gold');
+				if (goldIndexes.has(index) && !permanentFaultIndexes.has(index) && !forcePermanentIndexes.has(index)) {
+					item.classList.add('blue-streak-gold')
+				}
+			})
+		}
 
-        blockLimitEnable.addEventListener('change', () => {
-            blockLimitEnabled = blockLimitEnable.checked;
-            blockLimitInput.disabled = false;
-            blockLimit = blockLimitEnabled ? Math.max(1, Number(blockLimitInput.value) || 1) : Infinity;
-            trimBlockHistory();
-        });
+		function updateNumberColors() {
+			document.querySelectorAll('.num-item').forEach(item => {
+				const index = Number(item.dataset.index);
+				item.classList.remove('moved-red', 'white-streak-red', 'blue-streak-gold', 'permanent-red');
+				if ((permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index))) {
+					item.classList.add('permanent-red')
+				} else if ((faultIndexes.has(index) || forceFaultIndexes.has(index))) {
+					item.classList.add('moved-red')
+				} else if (isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7 && (!faultIndexes.has(index) && !forceFaultIndexes.has(index))) {
+					item.classList.add('white-streak-red')
+				} else if (goldIndexes.has(index) || (blueStreakCount[index] || 0) >= 7) {
+					goldIndexes.add(index);
+					item.classList.add('blue-streak-gold')
+				}
+			})
+		}
 
-        blockLimitInput.addEventListener('input', () => {
-            blockLimit = Math.max(1, Number(blockLimitInput.value) || 1);
-            trimBlockHistory();
-        });
+		function reorderMovedNumbers() {
+			if (weightGroups && weightGroups.length) {
+				updateNumberColors();
+				return
+			}
+			const items = [...resultDiv.querySelectorAll('.num-item')];
+			items.sort((a, b) => {
+				const ai = Number(a.dataset.index);
+				const bi = Number(b.dataset.index);
+				const aMoved = isLatestWhite(ai) && (whiteStreakCount[ai] || 0) >= 7;
+				const bMoved = isLatestWhite(bi) && (whiteStreakCount[bi] || 0) >= 7;
+				if (aMoved !== bMoved) {
+					return aMoved ? 1 : -1
+				}
+				return Number(currentNumList[ai].value) - Number(currentNumList[bi].value)
+			});
+			resultDiv.innerHTML = '';
+			items.forEach(item => resultDiv.appendChild(item));
+			updateNumberColors()
+		}
 
-        function addBlockToHistory(index, mark){
-    if(!blockHistory[index]) blockHistory[index]=[];
-    blockHistory[index].push(mark);
-    if(blockLimitEnabled && blockHistory[index].length > blockLimit){
-        blockHistory[index].shift();
-    }
-}
+		function updateRuleDesc() {
+			if (currentMode === 'interval') {
+				ruleDesc.textContent = `当前规律：固定间隔模式|a=${currentA}→每隔${currentA-1}台车辆会有一台车辆不出车，其余出车`
+			} else if (currentMode === 'randomFixed') {
+				ruleDesc.textContent = `当前规律：固定数目模式|a=${currentA}→随机选择${currentA}台车辆不出车，其余出车`
+			} else if (currentMode === 'float') {
+				let numMin;
+				if (currentA - floatDown < 0) {
+					numMin = 0
+				} else {
+					numMin = currentA - floatDown
+				}
+				ruleDesc.textContent = `当前规律：浮动数目模式|a=${currentA}→随机选择${numMin}至${currentA+floatUp}台车辆不出车，其余出车`
+			} else {
+				ruleDesc.textContent = `当前规律：概率模式|a=${currentA}→每台车有${currentA}%概率不出车，也即有${100-currentA}%概率出车`
+			}
+		}
 
-function renderBlocks(index){
-    return (blockHistory[index]||[]).map(m=>`<span class="block-mark">${m}</span>`).join('');
-}
+		function getRandomIndexes(length, count) {
+			count = Math.max(0, Math.min(count, length));
+			let indexes = Array.from({
+				length
+			}, (_, i) => i);
+			for (let i = indexes.length - 1; i > 0; i--) {
+				let j = Math.floor(Math.random() * (i + 1));
+				[indexes[i], indexes[j]] = [indexes[j], indexes[i]]
+			}
+			return new Set(indexes.slice(0, count))
+		}
 
-function applyBlockLimit(item) {
-    const index = Number(item.dataset.index);
-    item.querySelectorAll('.block-mark').forEach(b=>b.remove());
-    item.insertAdjacentHTML('beforeend', ' ' + renderBlocks(index));
-}
+		function updateFaults(numLength) {
+			if (!permanentFaultEnable.checked) {
+				permanentFaultIndexes.forEach(i => {
+					if (!forcePermanentIndexes.has(i)) {
+						permanentFaultIndexes.delete(i);
+						faultIndexes.add(i)
+					}
+				})
+			}
+			for (let i = 0; i < numLength; i++) {
+				const w = getWeightIndex(i);
+				const cfg = weightFaultSettings[w] || {
+					fault: 50,
+					repair: 50,
+					permanent: 100
+				};
+				if (faultIndexes.has(i) && !forceFaultIndexes.has(i) && Math.random() < 1 / cfg.repair) {
+					faultIndexes.delete(i)
+				}
+				if (!faultIndexes.has(i) && !forceFaultIndexes.has(i) && !permanentFaultIndexes.has(i) && !forcePermanentIndexes.has(i) && !forceBlueIndexes.has(i) && !forceWhiteIndexes.has(i) && faultEnable.checked && faultIndexes.size < faultLimit && Math.random() < 1 / cfg.fault) {
+					faultIndexes.add(i)
+				}
+			}
+			if (permanentFaultEnable.checked) {
+				for (let i = 0; i < numLength; i++) {
+					if (permanentFaultIndexes.has(i) || forcePermanentIndexes.has(i) || forceFaultIndexes.has(i) || forceBlueIndexes.has(i) || forceWhiteIndexes.has(i)) continue;
+					if (permanentFaultIndexes.size >= permanentFaultLimit) break;
+					const w = getWeightIndex(i);
+					const cfg = weightFaultSettings[w] || {
+						permanent: 100
+					};
+					if (Math.random() < 1 / cfg.permanent) {
+						permanentFaultIndexes.add(i);
+						faultIndexes.delete(i)
+					}
+				}
+				forcePermanentIndexes.forEach(i => permanentFaultIndexes.add(i))
+			}
+		}
 
-        // 模式切换逻辑
-        modeSelect.addEventListener('change', () => {
-            currentMode = modeSelect.value;
-            if(floatSettingRow) floatSettingRow.style.display = currentMode==='float' ? 'flex' : 'none';
-            probabilitySlider.min = 0;
-            probabilitySlider.max = 100;
-            probabilitySlider.value = Math.min(Math.max(currentA, 0), 100);
-            aInput.min = 0;
-            aInput.value = probabilitySlider.value;
-            currentA = Number(probabilitySlider.value);
-            updateRuleDesc();
-        });
+		function getFixedWhiteIndexes(total, count) {
+			const result = new Set();
+			const occupyWhite = document.getElementById('forceWhiteOccupy')?.checked;
+			const reduceBlue = document.getElementById('forceBlueReduce')?.checked;
+			faultIndexes.forEach(i => result.add(i));
+			forceFaultIndexes.forEach(i => result.add(i));
+			permanentFaultIndexes.forEach(i => result.add(i));
+			forcePermanentIndexes.forEach(i => result.add(i));
+			if (occupyWhite) {
+				forceWhiteIndexes.forEach(i => result.add(i))
+			}
+			const candidates = [];
+			for (let i = 0; i < total; i++) {
+				if (!result.has(i) && !forceBlueIndexes.has(i) && !(occupyWhite && forceWhiteIndexes.has(i))) candidates.push(i)
+			}
+			let need = count - result.size;
+			if (reduceBlue) need -= forceBlueIndexes.size;
+			need = Math.max(0, need);
+			const extra = getRandomIndexes(candidates.length, need);
+			candidates.forEach((v, i) => {
+				if (extra.has(i)) result.add(v)
+			});
+			if (!occupyWhite) {
+				forceWhiteIndexes.forEach(i => result.add(i))
+			}
+			return result
+		}
 
-        // 滑动条和输入框联动
-        probabilitySlider.addEventListener('input', () => {
-            currentA = Number(probabilitySlider.value);
-            aInput.value = currentA;
-            updateRuleDesc();
-        });
-        aInput.addEventListener('input', () => {
-            let val = Number(aInput.value);
-            // 自动 clamping 到合法范围
-            val = Math.min(Math.max(val, 0), 100);
-            currentA = val;
-            probabilitySlider.value = val;
-            updateRuleDesc();
-        });
+		function getFloatWhiteIndexes(total, count) {
+			return getFixedWhiteIndexes(total, count)
+		}
 
-        
-function resolveMark(index, mode, randomWhiteIndexes=new Set()){
-    // 强制规则最高优先级，避免模式逻辑覆盖
-    if(forcePermanentIndexes.has(index) || permanentFaultIndexes.has(index) || forceFaultIndexes.has(index) || faultIndexes.has(index) || forceWhiteIndexes.has(index)) return '⬜';
-    if(forceBlueIndexes.has(index)) return '🟦';
+		function applyFaultMarks(indexes, total, needCount) {
+			const result = new Set();
+			faultIndexes.forEach(i => result.add(i));
+			permanentFaultIndexes.forEach(i => result.add(i));
+			if (result.size >= needCount) {
+				return result
+			}
+			indexes.forEach(i => {
+				if (result.size < needCount) {
+					result.add(i)
+				}
+			});
+			while (result.size < needCount) {
+				const candidates = [];
+				for (let i = 0; i < total; i++) {
+					if (!result.has(i)) candidates.push(i)
+				}
+				if (!candidates.length) break;
+				result.add(candidates[Math.floor(Math.random() * candidates.length)])
+			}
+			return result
+		}
+		permanentFaultEnable.addEventListener('change', () => {
+			if (!permanentFaultEnable.checked) {
+				permanentFaultIndexes.forEach(i => {
+					if (!forcePermanentIndexes.has(i)) {
+						permanentFaultIndexes.delete(i);
+						faultIndexes.add(i)
+					}
+				});
+				document.querySelectorAll('.num-item').forEach(item => item.classList.remove('permanent-red'));
+				updateNumberColors()
+			}
+		});
+		faultLimitMode.addEventListener('change', () => {
+			faultLimitInput.disabled = faultLimitMode.value !== 'custom';
+			faultLimit = faultLimitMode.value === 'unlimited' ? Infinity : Math.max(0, Number(faultLimitInput.value) || 0)
+		});
+		faultLimitInput.addEventListener('input', () => {
+			faultLimit = Math.max(0, Number(faultLimitInput.value) || 0)
+		});
+		if (faultCreateProb) {
+			faultCreateProb.addEventListener('change', () => {
+				if (Number(faultCreateProb.value) < 1 || !Number.isFinite(Number(faultCreateProb.value))) {
+					faultCreateProb.value = 50
+				}
+			})
+		}
+		if (faultRepairProb) {
+			faultRepairProb.addEventListener('change', () => {
+				if (Number(faultRepairProb.value) < 1 || !Number.isFinite(Number(faultRepairProb.value))) {
+					faultRepairProb.value = 50
+				}
+			})
+		}
+		document.getElementById('permanentLimitMode').addEventListener('change', () => {
+			const m = document.getElementById('permanentLimitMode');
+			const x = document.getElementById('permanentLimitInput');
+			x.disabled = m.value !== 'custom';
+			permanentFaultLimit = m.value === 'unlimited' ? Infinity : Math.max(0, Number(x.value) || 0)
+		});
+		document.getElementById('permanentLimitInput').addEventListener('input', e => {
+			permanentFaultLimit = Math.max(0, Number(e.target.value) || 0)
+		});
+		blockLimitEnable.addEventListener('change', () => {
+			blockLimitEnabled = blockLimitEnable.checked;
+			blockLimitInput.disabled = false;
+			blockLimit = blockLimitEnabled ? Math.max(1, Number(blockLimitInput.value) || 1) : Infinity;
+			trimBlockHistory()
+		});
+		blockLimitInput.addEventListener('input', () => {
+			blockLimit = Math.max(1, Number(blockLimitInput.value) || 1);
+			trimBlockHistory()
+		});
 
-    if(mode==='interval'){
-        return ((index+1)%currentA===0) ? '⬜':'🟦';
-    }
-    if(mode==='randomFixed' || mode==='float'){
-        return randomWhiteIndexes.has(index) ? '⬜':'🟦';
-    }
-    return Math.random() < (currentA/100) ? '⬜':'🟦';
-}
+		function addBlockToHistory(index, mark) {
+			if (!blockHistory[index]) blockHistory[index] = [];
+			blockHistory[index].push(mark);
+			if (blockLimitEnabled && blockHistory[index].length > blockLimit) {
+				blockHistory[index].shift()
+			}
+		}
 
-// 重新生成按钮逻辑
-        regenerateBtn.addEventListener('click', () => {
-            // 重新生成时清除上一轮所有故障状态
-            faultIndexes.clear();
-            permanentFaultIndexes.clear();
-            weightFaultSettings = weightGroups.map(() => ({
-                fault:50,
-                repair:50,
-                permanent:100
-            }));
-            // 清空所有历史内容
-            resultDiv.innerHTML = '';
-            currentNumList = [];
-            continueBtn.disabled = true;
+		function renderBlocks(index) {
+			return (blockHistory[index] || []).map(m => `<span class="block-mark">${m}</span>`).join('')
+		}
 
-            // -------------------------- 第一步：输入数字数组（兼容多种格式） --------------------------
-            let numArray = [];
-            do {
-                const inputArr = prompt('请输入纯数字数组作为车辆编号，支持格式：\n1. 空格分隔：0001 0002 0003\n2. 逗号分隔：0001,0002,0003\n3. 带[]格式：[0001,0002,0003]\n4. 用/来分隔不同车型的车辆：0001 0002 0003/0155 0156 0157\n5. 混合分隔也可识别：[0001 0002 0003/0155,0156,0157]');
-                // 处理取消输入
-                if (inputArr === null) return;
+		function applyBlockLimit(item) {
+			const index = Number(item.dataset.index);
+			item.querySelectorAll('.block-mark').forEach(b => b.remove());
+			item.insertAdjacentHTML('beforeend', ' ' + renderBlocks(index))
+		}
+		modeSelect.addEventListener('change', () => {
+			currentMode = modeSelect.value;
+			if (floatSettingRow) floatSettingRow.style.display = currentMode === 'float' ? 'flex' : 'none';
+			probabilitySlider.min = 0;
+			probabilitySlider.max = 100;
+			probabilitySlider.value = Math.min(Math.max(currentA, 0), 100);
+			aInput.min = 0;
+			aInput.value = probabilitySlider.value;
+			currentA = Number(probabilitySlider.value);
+			updateRuleDesc()
+		});
+		probabilitySlider.addEventListener('input', () => {
+			currentA = Number(probabilitySlider.value);
+			aInput.value = currentA;
+			updateRuleDesc()
+		});
+		aInput.addEventListener('input', () => {
+			let val = Number(aInput.value);
+			val = Math.min(Math.max(val, 0), 100);
+			currentA = val;
+			probabilitySlider.value = val;
+			updateRuleDesc()
+		});
 
-                // 清洗输入：支持斜杠分隔权重组
-                weightGroups = [];
-                numArray = parseWeightedNumbers(inputArr.trim());
-                createWeightInputs();
-                let isValid = numArray.length > 0;
+		function resolveMark(index, mode, randomWhiteIndexes = new Set()) {
+			if (forcePermanentIndexes.has(index) || permanentFaultIndexes.has(index) || forceFaultIndexes.has(index) || faultIndexes.has(index) || forceWhiteIndexes.has(index)) return '⬜';
+			if (forceBlueIndexes.has(index)) return '🟦';
+			if (mode === 'interval') {
+				return ((index + 1) % currentA === 0) ? '⬜' : '🟦'
+			}
+			if (mode === 'randomFixed' || mode === 'float') {
+				return randomWhiteIndexes.has(index) ? '⬜' : '🟦'
+			}
+			return Math.random() < (currentA / 100) ? '⬜' : '🟦'
+		}
+		regenerateBtn.addEventListener('click', () => {
+			faultIndexes.clear();
+			permanentFaultIndexes.clear();
+			weightFaultSettings = weightGroups.map(() => ({
+				fault: 50,
+				repair: 50,
+				permanent: 100
+			}));
+			resultDiv.innerHTML = '';
+			currentNumList = [];
+			continueBtn.disabled = true;
+			let numArray = [];
+			do {
+				const inputArr = prompt('请输入纯数字数组作为车辆编号，支持格式：\n1. 空格分隔：0001 0002 0003\n2. 逗号分隔：0001,0002,0003\n3. 带[]格式：[0001,0002,0003]\n4. 用/来分隔不同车型的车辆：0001 0002 0003/0155 0156 0157\n5. 混合分隔也可识别：[0001 0002 0003/0155,0156,0157]');
+				if (inputArr === null) return;
+				weightGroups = [];
+				numArray = parseWeightedNumbers(inputArr.trim());
+				createWeightInputs();
+				let isValid = numArray.length > 0;
+				if (!isValid || numArray.length === 0) {
+					alert('格式错误！请确保所有元素都是纯数字，可用空格/逗号/[]分隔')
+				}
+			} while (numArray.length === 0);
+			let a;
+			do {
+				const inputA = prompt(`请输入[a]（当前规则：${currentMode==='interval'?'固定间隔模式，[a]必须是≥1的整数':currentMode==='float'?'浮动数目模式，[a+(向上浮动值)]不能大于车辆总数':currentMode==='randomFixed'?'固定数目模式，[a]为不出车数量且不能大于车辆总数':'概率模式，[a]必须是0-100的整数'}）：`);
+				if (inputA === null) return;
+				a = Number(inputA.trim());
+				if (isNaN(a) || !Number.isInteger(a)) {
+					alert('[a]必须是整数，请重新输入！');
+					continue
+				}
+				if ((currentMode === 'interval' || currentMode === 'float' || currentMode === 'randomFixed') && a < 0) {
+					alert('该模式下[a]必须为正整数，请重新输入！');
+					continue
+				}
+				if (currentMode === 'float' && a + floatUp > numArray.length) {
+					alert('浮动数目模式下[a+(向上浮动值)]不能大于车辆总数，请重新输入！');
+					continue
+				}
+				if (currentMode === 'randomFixed' && a > numArray.length) {
+					alert('固定数目模式下[a]不能大于车辆总数，请重新输入！');
+					continue
+				}
+				if (currentMode === 'probability' && (a < 0 || a > 100)) {
+					alert('概率模式下[a]必须是0-100的整数，请重新输入！');
+					continue
+				}
+				if (currentMode === 'interval' && a < 1) {
+					alert('固定间隔模式下[a]不能为0，请重新输入！');
+					continue
+				}
+				break
+			} while (true);
+			currentNumList = numArray;
+			refreshManualOverrides();
+			currentMarks = Array(numArray.length).fill('🟦');
+			blockHistory = Array.from({
+				length: numArray.length
+			}, () => []);
+			whiteStreakCount = Array(numArray.length).fill(0);
+			blueStreakCount = Array(numArray.length).fill(0);
+			goldIndexes.clear();
+			movedToBottom.clear();
+			updateFaults(numArray.length);
+			currentA = a;
+			aInput.value = a;
+			probabilitySlider.value = a;
+			updateRuleDesc();
+			continueBtn.disabled = false;
+			let resultHtml = '';
+			let randomWhiteIndexes = new Set();
+			if (currentMode === 'randomFixed') {
+				randomWhiteIndexes = getFixedWhiteIndexes(numArray.length, a)
+			} else if (currentMode === 'float') {
+				const minCount = Math.max(0, a - floatDown);
+				const maxCount = Math.min(numArray.length, a + floatUp);
+				const count = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
+				randomWhiteIndexes = getFloatWhiteIndexes(numArray.length, count)
+			}
+			numArray.forEach((item, index) => {
+				let mark = resolveMark(index, currentMode, randomWhiteIndexes);
+				addBlockToHistory(index, mark);
+				updateWhiteStreak(index, mark === '⬜');
+				resultHtml += `<span class="num-item"data-index="${index}">${item.original}<span class="block-mark">${mark}</span></span>`
+			});
+			resultDiv.innerHTML = weightGroups.length ? renderByWeightGroups() : resultHtml;
+			reorderMovedNumbers()
+		});
+		continueBtn.addEventListener('click', () => {
+			if (currentNumList.length === 0) return;
+			updateFaults(currentNumList.length);
+			if (weightGroups.length) {
+				let randomWhiteIndexes = new Set();
+				if (currentMode === 'randomFixed') {
+					randomWhiteIndexes = getFixedWhiteIndexes(currentNumList.length, currentA)
+				} else if (currentMode === 'float') {
+					const minCount = Math.max(0, currentA - floatDown);
+					const maxCount = Math.min(currentNumList.length, currentA + floatUp);
+					const count = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
+					randomWhiteIndexes = getFloatWhiteIndexes(currentNumList.length, count)
+				}
+				for (let i = 0; i < currentNumList.length; i++) {
+					const mark = resolveMark(i, currentMode, randomWhiteIndexes);
+					currentMarks[i] = mark;
+					addBlockToHistory(i, mark);
+					updateWhiteStreak(i, mark === '⬜')
+				}
+				resultDiv.innerHTML = renderByWeightGroups();
+				updateNumberColors();
+				return
+			}
+			const numItems = document.querySelectorAll('.num-item');
+			let randomWhiteIndexes = new Set();
+			if (currentMode === 'randomFixed') {
+				randomWhiteIndexes = getFixedWhiteIndexes(currentNumList.length, currentA)
+			} else if (currentMode === 'float') {
+				const minCount = Math.max(0, currentA - floatDown);
+				const maxCount = Math.min(currentNumList.length, currentA + floatUp);
+				const count = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
+				randomWhiteIndexes = getFloatWhiteIndexes(currentNumList.length, count)
+			}
+			numItems.forEach((item) => {
+				const index = Number(item.dataset.index);
+				let newMark = resolveMark(index, currentMode, randomWhiteIndexes);
+				addBlockToHistory(index, newMark);
+				applyBlockLimit(item);
+				updateWhiteStreak(index, newMark === '⬜')
+			});
+			reorderMovedNumbers()
+		});
+		floatDownInput?.addEventListener('input', () => {
+			floatDown = Math.max(0, Number(floatDownInput.value) || 0);
+			updateRuleDesc()
+		});
+		floatUpInput?.addEventListener('input', () => {
+			floatUp = Math.max(0, Number(floatUpInput.value) || 0);
+			updateRuleDesc()
+		});
 
-                if (!isValid || numArray.length === 0) {
-                    alert('格式错误！请确保所有元素都是纯数字，可用空格/逗号/[]分隔');
-                }
-            } while (numArray.length === 0);
+		function exportVehicleState() {
+			const data = {
+				version: '1.0',
+				exportedAt: new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString(),
+				mode: currentMode,
+				a: currentA,
+				floatDown,
+				floatUp,
+				faultMechanism: {
+					enabled: !!faultEnable.checked,
+					limitEnabled: faultLimitMode.value === 'custom',
+					limit: faultLimit === Infinity ? null : faultLimit
+				},
+				permanentMechanism: {
+					enabled: !!permanentFaultEnable.checked,
+					limitEnabled: document.getElementById('permanentLimitMode').value === 'custom',
+					limit: permanentFaultLimit === Infinity ? null : permanentFaultLimit
+				},
+				weightSettings: {
+					titleEnabled: weightTitleEnabled,
+					groups: weightGroups.map((g, i) => ({
+						name: g.name,
+						level: g.level || '',
+						vehicles: g.numbers.map(n => n.original),
+						faultRate: weightFaultSettings[i]?.fault ?? 50,
+						repairRate: weightFaultSettings[i]?.repair ?? 50,
+						permanentFaultRate: weightFaultSettings[i]?.permanent ?? 100
+					}))
+				},
+				force: {
+					blue: [...forceBlueIndexes].map(i => currentNumList[i]?.original),
+					white: [...forceWhiteIndexes].map(i => currentNumList[i]?.original),
+					fault: [...forceFaultIndexes].map(i => currentNumList[i]?.original),
+					permanent: [...forcePermanentIndexes].map(i => currentNumList[i]?.original)
+				},
+				forceRules: {
+					blueReduce: !!document.getElementById('forceBlueReduce')?.checked,
+					whiteOccupy: !!document.getElementById('forceWhiteOccupy')?.checked
+				},
+				blockRule: {
+					enabled: !!blockLimitEnabled,
+					limit: blockLimit === Infinity ? null : blockLimit
+				},
+				vehicles: currentNumList.map((v, i) => ({
+					number: v.original,
+					fault: faultIndexes.has(i) || forceFaultIndexes.has(i),
+					permanent: permanentFaultIndexes.has(i) || forcePermanentIndexes.has(i),
+					gold: goldIndexes.has(i) || (blueStreakCount[i] || 0) >= 7,
+					whiteStreakRed: isLatestWhite(i) && (whiteStreakCount[i] || 0) >= 7,
+					whiteStreak: whiteStreakCount[i] || 0,
+					blueStreak: blueStreakCount[i] || 0,
+					blocks: blockHistory[i] || []
+				}))
+			};
+			const blob = new Blob([JSON.stringify(data, null, 2)], {
+				type: 'application/json'
+			});
+			const a = document.createElement('a');
+			a.href = URL.createObjectURL(blob);
+			a.download = 'vehicle_state_' + new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString() + '.json';
+			a.click();
+			URL.revokeObjectURL(a.href)
+		}
 
-            // -------------------------- 第二步：输入数字a（按当前规则校验） --------------------------
-            let a;
-            do {
-                const inputA = prompt(`请输入[a]（当前规则：${currentMode === 'interval' ? '固定间隔模式，[a]必须是≥1的整数' : currentMode === 'float' ? '浮动数目模式，[a+(向上浮动值)]不能大于车辆总数' : currentMode === 'randomFixed' ? '固定数目模式，[a]为不出车数量且不能大于车辆总数' : '概率模式，[a]必须是0-100的整数'}）：`);
-                if (inputA === null) return;
-                a = Number(inputA.trim());
-                // 校验合法性
-                if (isNaN(a) || !Number.isInteger(a)) {
-                    alert('[a]必须是整数，请重新输入！');
-                    continue;
-                }
-                if ((currentMode === 'interval' || currentMode === 'float' || currentMode === 'randomFixed') && a < 0) {
-                    alert('该模式下[a]必须为正整数，请重新输入！');
-                    continue;
-                }
-                if (currentMode === 'float' && a + floatUp > numArray.length) {
-                    alert('浮动数目模式下[a+(向上浮动值)]不能大于车辆总数，请重新输入！');
-                    continue;
-                }
-                if (currentMode === 'randomFixed' && a > numArray.length) {
-                    alert('固定数目模式下[a]不能大于车辆总数，请重新输入！');
-                    continue;
-                }
-                if (currentMode === 'probability' && (a < 0 || a > 100)) {
-                    alert('概率模式下[a]必须是0-100的整数，请重新输入！');
-                    continue;
-                }
-                if (currentMode === 'interval' && a < 1) {
-                    alert('固定间隔模式下[a]不能为0，请重新输入！');
-                    continue;
-                }
-                break;
-            } while (true);
+		function importVehicleState(file) {
+			const r = new FileReader();
+			r.onload = () => {
+				try {
+					const d = JSON.parse(r.result);
+					currentMode = d.mode || 'randomFixed';
+					modeSelect.value = currentMode;
+					currentA = Number(d.a ?? 5);
+					floatDown = Number(d.floatDown ?? 3);
+					floatUp = Number(d.floatUp ?? 2);
+					floatDownInput.value = floatDown;
+					floatUpInput.value = floatUp;
+					aInput.value = currentA;
+					probabilitySlider.value = currentA;
+					if (floatSettingRow) floatSettingRow.style.display = currentMode === 'float' ? 'flex' : 'none';
+					if (d.faultMechanism) {
+						faultEnable.checked = !!d.faultMechanism.enabled;
+						if (d.faultMechanism.limitEnabled) {
+							faultLimitMode.value = 'custom';
+							faultLimitInput.disabled = false;
+							faultLimitInput.value = d.faultMechanism.limit ?? 0;
+							faultLimit = Number(d.faultMechanism.limit ?? 0)
+						} else {
+							faultLimitMode.value = 'unlimited';
+							faultLimitInput.disabled = true;
+							faultLimit = Infinity
+						}
+					}
+					if (d.permanentMechanism) {
+						permanentFaultEnable.checked = !!d.permanentMechanism.enabled;
+						if (d.permanentMechanism.limitEnabled) {
+							permanentLimitMode.value = 'custom';
+							permanentLimitInput.disabled = false;
+							permanentLimitInput.value = d.permanentMechanism.limit ?? 0;
+							permanentFaultLimit = Number(d.permanentMechanism.limit ?? 0)
+						} else {
+							permanentLimitMode.value = 'unlimited';
+							permanentLimitInput.disabled = true;
+							permanentFaultLimit = Infinity
+						}
+					}
+					if (d.forceRules) {
+						const fb = document.getElementById('forceBlueReduce');
+						const fw = document.getElementById('forceWhiteOccupy');
+						if (fb) fb.checked = !!d.forceRules.blueReduce;
+						if (fw) fw.checked = !!d.forceRules.whiteOccupy
+					}
+					if (d.blockRule) {
+						blockLimitEnabled = !!d.blockRule.enabled;
+						blockLimit = d.blockRule.limit == null ? Infinity : Number(d.blockRule.limit);
+						if (blockLimitEnable) blockLimitEnable.checked = blockLimitEnabled;
+						if (blockLimitInput) blockLimitInput.value = blockLimitEnabled && blockLimit !== Infinity ? blockLimit : ''
+					}
+					weightGroups = [];
+					if (d.weightSettings && d.weightSettings.groups) {
+						weightGroups = d.weightSettings.groups.map((g, i) => ({
+							name: g.name || ('车型' + (i + 1)),
+							numbers: (g.vehicles || []).map(v => ({
+								original: String(v),
+								value: Number(v),
+								weight: i
+							}))
+						}));
+						weightFaultSettings = d.weightSettings.groups.map(g => ({
+							fault: Number(g.faultRate ?? 50),
+							repair: Number(g.repairRate ?? 50),
+							permanent: Number(g.permanentFaultRate ?? 100)
+						}));
+						createWeightInputs();
+						d.weightSettings.groups.forEach((g, i) => {
+							if (!weightFaultSettings[i]) weightFaultSettings[i] = {
+								fault: 50,
+								repair: 50,
+								permanent: 100
+							};
+							weightFaultSettings[i].fault = Number(g.faultRate ?? weightFaultSettings[i].fault);
+							weightFaultSettings[i].repair = Number(g.repairRate ?? weightFaultSettings[i].repair);
+							weightFaultSettings[i].permanent = Number(g.permanentFaultRate ?? weightFaultSettings[i].permanent)
+						});
+						document.querySelectorAll('.weight-input').forEach(x => {
+							const i = Number(x.dataset.i);
+							if (x.dataset.type && weightFaultSettings[i]) {
+								x.value = weightFaultSettings[i][x.dataset.type]
+							}
+						});
+						document.querySelectorAll('.weight-name-input').forEach((x, i) => {
+							if (weightGroups[i]) x.value = weightGroups[i].name
+						})
+					} else {
+						weightGroups = [];
+						createWeightInputs()
+					}
+					currentNumList = (d.vehicles || []).map(v => ({
+						original: String(v.number),
+						value: Number(v.number)
+					}));
+					faultIndexes = new Set();
+					permanentFaultIndexes = new Set();
+					goldIndexes = new Set();
+					blockHistory = [];
+					whiteStreakCount = [];
+					blueStreakCount = [];
+					forceBlueIndexes = new Set();
+					forceWhiteIndexes = new Set();
+					forceFaultIndexes = new Set();
+					forcePermanentIndexes = new Set();
+					(d.vehicles || []).forEach((v, i) => {
+						if (v.fault) faultIndexes.add(i);
+						if (v.permanent) permanentFaultIndexes.add(i);
+						if (v.gold) goldIndexes.add(i);
+						blockHistory[i] = v.blocks || [];
+						whiteStreakCount[i] = Number(v.whiteStreak || 0);
+						blueStreakCount[i] = Number(v.blueStreak || 0);
+						if (v.whiteStreakRed) whiteStreakCount[i] = Math.max(7, whiteStreakCount[i])
+					});
 
-            // 保存状态供继续生成使用
-            currentNumList = numArray;
-            refreshManualOverrides();
-            currentMarks = Array(numArray.length).fill('🟦');
-            blockHistory = Array.from({length:numArray.length},()=>[]);
-            whiteStreakCount = Array(numArray.length).fill(0);
-            blueStreakCount = Array(numArray.length).fill(0);
-            goldIndexes.clear();
-            movedToBottom.clear();
-            updateFaults(numArray.length);
-            currentA = a;
-            // 同步到界面控件
-            aInput.value = a;
-            probabilitySlider.value = a;
-            updateRuleDesc();
-            // 启用继续生成按钮
-            continueBtn.disabled = false;
-
-            
-// -------------------------- 第三步：生成初始标记结果 --------------------------
-            let resultHtml = '';
-            let randomWhiteIndexes = new Set();
-            if (currentMode === 'randomFixed') {
-                randomWhiteIndexes = getFixedWhiteIndexes(numArray.length, a);
-            } else if (currentMode === 'float') {
-                const minCount = Math.max(0, a - floatDown);
-                const maxCount = Math.min(numArray.length, a + floatUp);
-                const count = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
-                randomWhiteIndexes = getFloatWhiteIndexes(numArray.length, count);
-            }
-            numArray.forEach((item, index) => {
-                let mark = resolveMark(index, currentMode, randomWhiteIndexes);
-                addBlockToHistory(index, mark);
-                updateWhiteStreak(index, mark === '⬜');
-                resultHtml += `<span class="num-item" data-index="${index}">${item.original} <span class="block-mark">${mark}</span></span>`;
-            });
-
-            // 渲染到页面（带权重分组时按权重显示）
-            resultDiv.innerHTML = weightGroups.length ? renderByWeightGroups() : resultHtml;
-            reorderMovedNumbers();
-        });
-
-        // 继续生成按钮逻辑
-        continueBtn.addEventListener('click', () => {
-            if (currentNumList.length === 0) return;
-            updateFaults(currentNumList.length);
-            if(weightGroups.length){
-                // 权重显示模式也统一使用 resolveMark，避免固定间隔/概率模式覆盖强制出车
-                let randomWhiteIndexes = new Set();
-                if(currentMode === 'randomFixed'){
-                    randomWhiteIndexes = getFixedWhiteIndexes(currentNumList.length, currentA);
-                } else if(currentMode === 'float'){
-                    const minCount=Math.max(0,currentA-floatDown);
-                    const maxCount=Math.min(currentNumList.length,currentA+floatUp);
-                    const count=Math.floor(Math.random()*(maxCount-minCount+1))+minCount;
-                    randomWhiteIndexes = getFloatWhiteIndexes(currentNumList.length,count);
-                }
-
-                for(let i=0;i<currentNumList.length;i++){
-                    const mark = resolveMark(i, currentMode, randomWhiteIndexes);
-                    currentMarks[i]=mark;
-                    addBlockToHistory(i, mark);
-                    updateWhiteStreak(i, mark === '⬜');
-                }
-                resultDiv.innerHTML = renderByWeightGroups();
-                updateNumberColors();
-                return;
-            }
-            const numItems = document.querySelectorAll('.num-item');
-            let randomWhiteIndexes = new Set();
-            if (currentMode === 'randomFixed') {
-                randomWhiteIndexes = getFixedWhiteIndexes(currentNumList.length, currentA);
-            } else if (currentMode === 'float') {
-                const minCount = Math.max(0, currentA - floatDown);
-                const maxCount = Math.min(currentNumList.length, currentA + floatUp);
-                const count = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
-                randomWhiteIndexes = getFloatWhiteIndexes(currentNumList.length, count);
-            }
-            numItems.forEach((item) => {
-                const index = Number(item.dataset.index);
-                let newMark = resolveMark(index, currentMode, randomWhiteIndexes);
-                addBlockToHistory(index,newMark);
-                applyBlockLimit(item);
-                updateWhiteStreak(index, newMark === '⬜');
-            });
-            reorderMovedNumbers();
-        });
-
-        
-floatDownInput?.addEventListener('input',()=>{floatDown=Math.max(0,Number(floatDownInput.value)||0);updateRuleDesc();});
-floatUpInput?.addEventListener('input',()=>{floatUp=Math.max(0,Number(floatUpInput.value)||0);updateRuleDesc();});
-
-function exportVehicleState(){
- const data={
-  version:'1.0',
-  exportedAt:new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString(),
-  mode:currentMode,
-  a:currentA,
-  floatDown,
-  floatUp,
-  faultMechanism:{
-    enabled:!!faultEnable.checked,
-    limitEnabled:faultLimitMode.value==='custom',
-    limit:faultLimit===Infinity?null:faultLimit
-  },
-  permanentMechanism:{
-    enabled:!!permanentFaultEnable.checked,
-    limitEnabled:document.getElementById('permanentLimitMode').value==='custom',
-    limit:permanentFaultLimit===Infinity?null:permanentFaultLimit
-  },
-  weightSettings:{
-    titleEnabled:weightTitleEnabled,
-    groups:weightGroups.map((g,i)=>({
-      name:g.name,
-      level:g.level||'',
-      vehicles:g.numbers.map(n=>n.original),
-      faultRate:weightFaultSettings[i]?.fault??50,
-      repairRate:weightFaultSettings[i]?.repair??50,
-      permanentFaultRate:weightFaultSettings[i]?.permanent??100
-    }))
-  },
-  force:{
-    blue:[...forceBlueIndexes].map(i=>currentNumList[i]?.original),
-    white:[...forceWhiteIndexes].map(i=>currentNumList[i]?.original),
-    fault:[...forceFaultIndexes].map(i=>currentNumList[i]?.original),
-    permanent:[...forcePermanentIndexes].map(i=>currentNumList[i]?.original)
-  },
-  forceRules:{
-    blueReduce:!!document.getElementById('forceBlueReduce')?.checked,
-    whiteOccupy:!!document.getElementById('forceWhiteOccupy')?.checked
-  },
-  blockRule:{
-    enabled:!!blockLimitEnabled,
-    limit:blockLimit===Infinity?null:blockLimit
-  },
-  vehicles:currentNumList.map((v,i)=>({
-    number:v.original,
-    fault:faultIndexes.has(i)||forceFaultIndexes.has(i),
-    permanent:permanentFaultIndexes.has(i)||forcePermanentIndexes.has(i),
-    gold:goldIndexes.has(i)||(blueStreakCount[i]||0)>=7,
-    whiteStreakRed:isLatestWhite(i)&&(whiteStreakCount[i]||0)>=7,
-    whiteStreak:whiteStreakCount[i]||0,
-    blueStreak:blueStreakCount[i]||0,
-    blocks:blockHistory[i]||[]
-  }))
- };
- const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
- const a=document.createElement('a');
- a.href=URL.createObjectURL(blob);
- a.download='vehicle_state_'+new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString()+'.json';
- a.click();
- URL.revokeObjectURL(a.href);
-}
-
-function importVehicleState(file){
- const r=new FileReader();
- r.onload=()=>{
-  try{
-   const d=JSON.parse(r.result);
-
-   // 恢复基础规则
-   currentMode=d.mode||'randomFixed';
-   modeSelect.value=currentMode;
-   currentA=Number(d.a??5);
-   floatDown=Number(d.floatDown??3);
-   floatUp=Number(d.floatUp??2);
-   floatDownInput.value=floatDown;
-   floatUpInput.value=floatUp;
-   aInput.value=currentA;
-   probabilitySlider.value=currentA;
-   if(floatSettingRow) floatSettingRow.style.display=currentMode==='float'?'flex':'none';
-
-   // 恢复故障/报废机制设置
-   if(d.faultMechanism){
-      faultEnable.checked=!!d.faultMechanism.enabled;
-      if(d.faultMechanism.limitEnabled){
-          faultLimitMode.value='custom';
-          faultLimitInput.disabled=false;
-          faultLimitInput.value=d.faultMechanism.limit??0;
-          faultLimit=Number(d.faultMechanism.limit??0);
-      }else{
-          faultLimitMode.value='unlimited';
-          faultLimitInput.disabled=true;
-          faultLimit=Infinity;
-      }
-   }
-   if(d.permanentMechanism){
-      permanentFaultEnable.checked=!!d.permanentMechanism.enabled;
-      if(d.permanentMechanism.limitEnabled){
-          permanentLimitMode.value='custom';
-          permanentLimitInput.disabled=false;
-          permanentLimitInput.value=d.permanentMechanism.limit??0;
-          permanentFaultLimit=Number(d.permanentMechanism.limit??0);
-      }else{
-          permanentLimitMode.value='unlimited';
-          permanentLimitInput.disabled=true;
-          permanentFaultLimit=Infinity;
-      }
-   }
-
-   if(d.forceRules){
-      const fb=document.getElementById('forceBlueReduce');
-      const fw=document.getElementById('forceWhiteOccupy');
-      if(fb) fb.checked=!!d.forceRules.blueReduce;
-      if(fw) fw.checked=!!d.forceRules.whiteOccupy;
-   }
-   if(d.blockRule){
-      blockLimitEnabled=!!d.blockRule.enabled;
-      blockLimit=d.blockRule.limit==null?Infinity:Number(d.blockRule.limit);
-      if(blockLimitEnable) blockLimitEnable.checked=blockLimitEnabled;
-      if(blockLimitInput) blockLimitInput.value=blockLimitEnabled&&blockLimit!==Infinity?blockLimit:'';
-   }
-
-   // 恢复权重组，必须先创建输入框，否则继续生成时权重索引为空
-   weightGroups=[];
-   if(d.weightSettings && d.weightSettings.groups){
-      weightGroups=d.weightSettings.groups.map((g,i)=>({
-          name:g.name||('车型'+(i+1)),
-          numbers:(g.vehicles||[]).map(v=>({original:String(v),value:Number(v),weight:i}))
-      }));
-      weightFaultSettings=d.weightSettings.groups.map(g=>({
-          fault:Number(g.faultRate??50),
-          repair:Number(g.repairRate??50),
-          permanent:Number(g.permanentFaultRate??100)
-      }));
-      // 先生成界面，再强制按导入数据覆盖（避免 createWeightInputs 初始化默认值覆盖导入值）
-      createWeightInputs();
-      d.weightSettings.groups.forEach((g,i)=>{
-          if(!weightFaultSettings[i]) weightFaultSettings[i]={fault:50,repair:50,permanent:100};
-          weightFaultSettings[i].fault=Number(g.faultRate ?? weightFaultSettings[i].fault);
-          weightFaultSettings[i].repair=Number(g.repairRate ?? weightFaultSettings[i].repair);
-          weightFaultSettings[i].permanent=Number(g.permanentFaultRate ?? weightFaultSettings[i].permanent);
-      });
-      document.querySelectorAll('.weight-input').forEach(x=>{
-          const i=Number(x.dataset.i);
-          if(x.dataset.type && weightFaultSettings[i]){
-              x.value=weightFaultSettings[i][x.dataset.type];
-          }
-      });
-      // 恢复车型名称输入框（不同版本 HTML 的 data 属性可能不同）
-      document.querySelectorAll('.weight-name-input').forEach((x,i)=>{
-          if(weightGroups[i]) x.value=weightGroups[i].name;
-      });
-   }else{
-      weightGroups=[];
-      createWeightInputs();
-   }
-
-   // 恢复车辆
-   currentNumList=(d.vehicles||[]).map(v=>({original:String(v.number),value:Number(v.number)}));
-   faultIndexes=new Set();
-   permanentFaultIndexes=new Set();
-   goldIndexes=new Set();
-   blockHistory=[];
-   whiteStreakCount=[];
-   blueStreakCount=[];
-   forceBlueIndexes=new Set();
-   forceWhiteIndexes=new Set();
-   forceFaultIndexes=new Set();
-   forcePermanentIndexes=new Set();
-
-   (d.vehicles||[]).forEach((v,i)=>{
-      if(v.fault) faultIndexes.add(i);
-      if(v.permanent) permanentFaultIndexes.add(i);
-      if(v.gold) goldIndexes.add(i);
-      blockHistory[i]=v.blocks||[];
-      whiteStreakCount[i]=Number(v.whiteStreak||0);
-      blueStreakCount[i]=Number(v.blueStreak||0);
-      if(v.whiteStreakRed) whiteStreakCount[i]=Math.max(7,whiteStreakCount[i]);
-   });
-
-   function restoreForceSet(arr){
-      const set=new Set();
-      (arr||[]).forEach(num=>{
-        currentNumList.forEach((v,i)=>{ if(String(v.original)===String(num)) set.add(i); });
-      });
-      return set;
-   }
-   if(d.force){
-      forceBlueIndexes=restoreForceSet(d.force.blue);
-      forceWhiteIndexes=restoreForceSet(d.force.white);
-      forceFaultIndexes=restoreForceSet(d.force.fault);
-      forcePermanentIndexes=restoreForceSet(d.force.permanent);
-      forceBlueInput.value=(d.force.blue||[]).join(' ');
-      forceWhiteInput.value=(d.force.white||[]).join(' ');
-      forceFaultInput.value=(d.force.fault||[]).join(' ');
-      forcePermanentInput.value=(d.force.permanent||[]).join(' ');
-   }
-
-   continueBtn.disabled=false;
-   updateRuleDesc();
-
-   // 必须使用权重渲染，否则只显示车辆列表，缺少正常/异常标题
-   resultDiv.innerHTML=weightGroups.length ? renderByWeightGroups() : currentNumList.map((v,i)=>
-      `<span class="num-item" data-index="${i}">${v.original} ${renderBlocks(i)}</span>`
-   ).join('');
-   updateNumberColors();
-  }catch(e){
-    alert('导入失败：文件格式错误或版本不兼容');
-    console.error(e);
-  }
- };
- r.readAsText(file);
-}
-exportStateBtn.addEventListener('click',exportVehicleState);
-importStateBtn.addEventListener('click',()=>importStateFile.click());
-importStateFile.addEventListener('change',e=>e.target.files[0]&&importVehicleState(e.target.files[0]));
-
-        // 初始化规则说明
-        updateRuleDesc();
-    </script>
-
-
-
+					function restoreForceSet(arr) {
+						const set = new Set();
+						(arr || []).forEach(num => {
+							currentNumList.forEach((v, i) => {
+								if (String(v.original) === String(num)) set.add(i)
+							})
+						});
+						return set
+					}
+					if (d.force) {
+						forceBlueIndexes = restoreForceSet(d.force.blue);
+						forceWhiteIndexes = restoreForceSet(d.force.white);
+						forceFaultIndexes = restoreForceSet(d.force.fault);
+						forcePermanentIndexes = restoreForceSet(d.force.permanent);
+						forceBlueInput.value = (d.force.blue || []).join(' ');
+						forceWhiteInput.value = (d.force.white || []).join(' ');
+						forceFaultInput.value = (d.force.fault || []).join(' ');
+						forcePermanentInput.value = (d.force.permanent || []).join(' ')
+					}
+					continueBtn.disabled = false;
+					updateRuleDesc();
+					resultDiv.innerHTML = weightGroups.length ? renderByWeightGroups() : currentNumList.map((v, i) => `<span class="num-item"data-index="${i}">${v.original}${renderBlocks(i)}</span>`).join('');
+					updateNumberColors()
+				} catch (e) {
+					alert('导入失败：文件格式错误或版本不兼容');
+					console.error(e)
+				}
+			};
+			r.readAsText(file)
+		}
+		exportStateBtn.addEventListener('click', exportVehicleState);
+		importStateBtn.addEventListener('click', () => importStateFile.click());
+		importStateFile.addEventListener('change', e => e.target.files[0] && importVehicleState(e.target.files[0]));
+		updateRuleDesc();
+	</script>
 </body>
 </html>
