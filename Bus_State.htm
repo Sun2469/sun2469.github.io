@@ -253,6 +253,12 @@
 <div id="dynamicWeightNameBox"></div>
 
 		<div class="control-row">
+			<span class="control-label">特殊字体：</span>
+			<label><input type="checkbox" id="blueStreakColorEnable" checked><span class="span-font"> 连续7次出车启用金色字体</span></label>
+			<label><input type="checkbox" id="whiteStreakColorEnable" checked><span class="span-font"> 连续7次不出启用浅红色字体</span></label>
+		</div>
+
+		<div class="control-row">
 			<span class="control-label">记录上限：</span>
 			<label><input type="checkbox" id="blockLimitEnable"><span class="span-font"> 启用上限功能（每台车辆后只保留最后x条记录，超出部分自动删除）</span></label>
 			<input type="number" id="blockLimitInput" value="10" min="1" style="width:100px">
@@ -322,6 +328,8 @@
 		let blockHistory = [];
 		let weightNamesEnabled = true;
 		let weightTitleEnabled = true;
+		let blueStreakColorEnabled = true;
+		let whiteStreakColorEnabled = true;
 		const wt = document.getElementById("weightTitleEnable");
 		addEventListener("change", () => {
 			weightTitleEnabled = wt.checked;
@@ -356,6 +364,18 @@
 		const forceWhiteInput = document.getElementById('forceWhiteInput');
 		const forceFaultInput = document.getElementById('forceFaultInput');
 		const forcePermanentInput = document.getElementById('forcePermanentInput');
+		const blueStreakColorEnable = document.getElementById('blueStreakColorEnable');
+		const whiteStreakColorEnable = document.getElementById('whiteStreakColorEnable');
+
+		blueStreakColorEnable.addEventListener('change', () => {
+			blueStreakColorEnabled = blueStreakColorEnable.checked;
+			updateNumberColors();
+		});
+
+		whiteStreakColorEnable.addEventListener('change', () => {
+			whiteStreakColorEnabled = whiteStreakColorEnable.checked;
+			updateNumberColors();
+		});
 
 		function parseManualIndexes(input) {
 			const vals = (input.value || '').split(/[\s\/]+/).filter(Boolean);
@@ -473,7 +493,7 @@
 					return !(permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index) || faultIndexes.has(index) || forceFaultIndexes.has(index)) && !(isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7)
 				}).sort((a, b) => a.value - b.value).forEach(n => {
 					const index = currentNumList.findIndex(x => x.original === n.original);
-					html += `<span class="num-item ${goldIndexes.has(index) ? 'blue-streak-gold' : ''}"data-index="${index}">${n.original}${renderBlocks(index)}</span>`
+					html += `<span class="num-item ${(goldIndexes.has(index) && blueStreakColorEnabled) ? 'blue-streak-gold' : ''}"data-index="${index}">${n.original}${renderBlocks(index)}</span>`
 				})
 			});
 			html += '<h2 class="section-title">【异常车辆】</h2>';
@@ -484,7 +504,7 @@
 					return (permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index) || faultIndexes.has(index) || forceFaultIndexes.has(index)) || (isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7)
 				}).sort((a, b) => a.value - b.value).forEach(n => {
 					const index = currentNumList.findIndex(x => x.original === n.original);
-					const cls = (permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index)) ? 'permanent-red' : ((faultIndexes.has(index) || forceFaultIndexes.has(index)) ? 'moved-red' : ((isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7) ? 'white-streak-red' : (goldIndexes.has(index) ? 'blue-streak-gold' : 'moved-red')));
+					const cls = (permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index)) ? 'permanent-red' : ((faultIndexes.has(index) || forceFaultIndexes.has(index)) ? 'moved-red' : ((whiteStreakColorEnabled && isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7) ? 'white-streak-red' : ((goldIndexes.has(index) && blueStreakColorEnabled) ? 'blue-streak-gold' : '')));
 					html += `<span class="num-item ${cls}"data-index="${index}">${n.original}${renderBlocks(index)}</span>`
 				})
 			});
@@ -553,11 +573,14 @@
 		function restoreSpecialColors() {
 			document.querySelectorAll('.num-item').forEach(item => {
 				const index = Number(item.dataset.index);
-				item.classList.remove('blue-streak-gold');
-				if (goldIndexes.has(index) && !permanentFaultIndexes.has(index) && !forcePermanentIndexes.has(index)) {
-					item.classList.add('blue-streak-gold')
+				item.classList.remove('blue-streak-gold', 'white-streak-red');
+				if (blueStreakColorEnabled && goldIndexes.has(index) && !permanentFaultIndexes.has(index) && !forcePermanentIndexes.has(index)) {
+					item.classList.add('blue-streak-gold');
 				}
-			})
+				if (whiteStreakColorEnabled && isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7 && !faultIndexes.has(index) && !forceFaultIndexes.has(index)) {
+					item.classList.add('white-streak-red');
+				}
+			});
 		}
 
 		function updateNumberColors() {
@@ -568,11 +591,14 @@
 					item.classList.add('permanent-red')
 				} else if ((faultIndexes.has(index) || forceFaultIndexes.has(index))) {
 					item.classList.add('moved-red')
-				} else if (isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7 && (!faultIndexes.has(index) && !forceFaultIndexes.has(index))) {
-					item.classList.add('white-streak-red')
-				} else if (goldIndexes.has(index) || (blueStreakCount[index] || 0) >= 7) {
-					goldIndexes.add(index);
-					item.classList.add('blue-streak-gold')
+				} else {
+					if (isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7 && (!faultIndexes.has(index) && !forceFaultIndexes.has(index))) {
+						if (whiteStreakColorEnabled) item.classList.add('white-streak-red')
+					}
+					if (goldIndexes.has(index) || (blueStreakCount[index] || 0) >= 7) {
+						goldIndexes.add(index);
+						if (blueStreakColorEnabled) item.classList.add('blue-streak-gold')
+					}
 				}
 			})
 		}
@@ -985,6 +1011,10 @@
 					limitEnabled: document.getElementById('permanentLimitMode').value === 'custom',
 					limit: permanentFaultLimit === Infinity ? null : permanentFaultLimit
 				},
+				specialFontSettings: {
+					blueStreakColorEnabled,
+					whiteStreakColorEnabled
+				},
 				weightSettings: {
 					titleEnabled: weightTitleEnabled,
 					groups: weightGroups.map((g, i) => ({
@@ -1038,6 +1068,12 @@
 					const d = JSON.parse(r.result);
 					currentMode = d.mode || 'randomFixed';
 					modeSelect.value = currentMode;
+					if (d.specialFontSettings) {
+						blueStreakColorEnabled = d.specialFontSettings.blueStreakColorEnabled !== false;
+						whiteStreakColorEnabled = d.specialFontSettings.whiteStreakColorEnabled !== false;
+						if (blueStreakColorEnable) blueStreakColorEnable.checked = blueStreakColorEnabled;
+						if (whiteStreakColorEnable) whiteStreakColorEnable.checked = whiteStreakColorEnabled;
+					}
 					currentA = Number(d.a ?? 5);
 					floatDown = Number(d.floatDown ?? 3);
 					floatUp = Number(d.floatUp ?? 2);
@@ -1169,7 +1205,8 @@
 					continueBtn.disabled = false;
 					updateRuleDesc();
 					resultDiv.innerHTML = weightGroups.length ? renderByWeightGroups() : currentNumList.map((v, i) => `<span class="num-item"data-index="${i}">${v.original}${renderBlocks(i)}</span>`).join('');
-					updateNumberColors()
+					updateNumberColors();
+					restoreSpecialColors()
 				} catch (e) {
 					alert('导入失败：文件格式错误或版本不兼容');
 					console.error(e)
