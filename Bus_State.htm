@@ -511,13 +511,7 @@
 			<!-- 规则显示 -->
 			<div class="rule-desc" id="ruleDesc">当前规律：固定数目模式 | a=5 → 随机选择5台车辆不出车，其余出车</div>
 			<!-- 注意事项 -->
-			<div class="notice" id="notice">
-				注意事项：本程序仅供娱乐使用，由本程序生成的车辆数据无法代表实际情况！<br>
-				本程序灵感来源：微信小程序[客滚查]<br>
-				本程序绝大多数代码由ChatGPT编写，目前已优化代码格式。<br>
-				如发现任何Bug请汇报，在此表示感谢。<br>
-				作者GitHub：https://github.com/sun2469
-			</div>
+			<div class="notice" id="notice"></div>
 		</div>
 		<!-- 生成按钮 -->
 		<div class="btn-group">
@@ -535,6 +529,7 @@
 		<script>
 			/* 变量
 			   注：所有注释都是后加的，仅供参考，不一定可信，实在不知道的就没加 */
+			let version = 'v2.4.6.9'; // 程序版本
 			let currentMode = 'randomFixed'; // 当前模式
 			let currentNumList = []; // 数字列表
 			let currentA = 5; // a
@@ -569,6 +564,7 @@
 			const aInput = document.getElementById('aInput'); // a是多少
 			const probabilitySlider = document.getElementById('probabilitySlider'); // a是多少（滑动条）
 			const ruleDesc = document.getElementById('ruleDesc'); // 生成规律显示
+			const notice = document.getElementById('notice'); // 注意事项
 			const weightTitleEnable = document.getElementById('weightTitleEnable'); // 显示车型名称
 			const faultEnable = document.getElementById('faultEnable'); // 是否开启故障机制
 			const faultLimitMode = document.getElementById('faultLimitMode'); // 故障上限（开启或者没开）
@@ -590,6 +586,15 @@
 			const faultCreateProb = null;
 			const faultRepairProb = null;
 			const permanentFaultCreateProb = null;
+			
+			notice.innerHTML = `
+				注意事项：本程序仅供娱乐使用，由本程序生成的车辆数据无法代表实际情况！<br>
+				本程序灵感来源：微信小程序[客滚查]<br>
+				本程序绝大多数代码由ChatGPT编写，目前已优化代码格式。<br>
+				如发现任何Bug请汇报，在此表示感谢。<br>
+				程序版本：` + version + `<br>
+				作者GitHub：https://github.com/sun2469
+			`;
 
 			// 代码懒得优化了，故只优化格式（能不能优化出来问题还不一定呢）
 
@@ -1251,7 +1256,7 @@
 
 			function exportVehicleState() {
 				const data = {
-					version: '2.4.6.9',
+					version: version,
 					exportedAt: new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString(),
 					mode: currentMode,
 					a: currentA,
