@@ -316,6 +316,12 @@
 				margin-left: 2%;
 			}
 
+			.vehicle-count-title {
+				text-align: center;
+				font-size: 28px;
+				margin: 10px 0;
+			}
+
 			@media screen and (max-width: 600px) {
 				body {
 					padding: 12px 8px;
@@ -445,6 +451,14 @@
 				</label>
 			</div>
 			<div id="dynamicWeightNameBox"></div>
+			<!-- 数量显示开关 -->
+			<div class="control-row">
+				<span class="control-label">数量显示：</span>
+				<label>
+					<input type="checkbox" id="vehicleCountDisplayEnable" checked>
+					<span class="span-font"> 显示车辆数量</span>
+				</label>
+			</div>
 			<!-- 特殊字体开关 -->
 			<div class="control-row">
 				<span class="control-label">特殊字体：</span>
@@ -529,7 +543,7 @@
 		<script>
 			/* 变量
 			   注：所有注释都是后加的，仅供参考，不一定可信，实在不知道的就没加 */
-			let version = 'v2.4.6.9'; // 程序版本
+			let version = 'v2.4.6.9.2469'; // 程序版本
 			let currentMode = 'randomFixed'; // 当前模式
 			let currentNumList = []; // 数字列表
 			let currentA = 5; // a
@@ -545,6 +559,7 @@
 			let whiteStreakCount = []; // 每台车连续多少次不出车
 			let goldIndexes = new Set(); // 金色特殊字体的车辆
 			let weightTitleEnabled = true; // 是否开启车型名称
+			let vehicleCountDisplayEnabled = true; // 是否显示车辆数量
 			let blueStreakColorEnabled = true; // 是否开启金色特殊字体（连续7出）
 			let whiteStreakColorEnabled = true; // 是否开启浅红色特殊字体（连续7不出）
 			let weightGroups = [];
@@ -583,10 +598,11 @@
 			const forcePermanentInput = document.getElementById('forcePermanentInput'); // 强制报废
 			const blueStreakColorEnable = document.getElementById('blueStreakColorEnable'); // 是否开启金色特殊字体
 			const whiteStreakColorEnable = document.getElementById('whiteStreakColorEnable'); // 是否开启浅红色特殊字体
+			const vehicleCountDisplayEnable = document.getElementById('vehicleCountDisplayEnable'); // 是否显示车辆数量
 			const faultCreateProb = null;
 			const faultRepairProb = null;
 			const permanentFaultCreateProb = null;
-			
+
 			notice.innerHTML = `
 				注意事项：本程序仅供娱乐使用，由本程序生成的车辆数据无法代表实际情况！<br>
 				本程序灵感来源：微信小程序[客滚查]<br>
@@ -600,7 +616,13 @@
 
 			weightTitleEnable.addEventListener('change', () => {
 				// 车型名称显示变动
-				weightTitleEnabled = weightTitle.checked;
+				weightTitleEnabled = weightTitleEnable.checked;
+				if (currentNumList.length) resultDiv.innerHTML = renderByWeightGroups();
+			});
+
+			vehicleCountDisplayEnable.addEventListener('change', () => {
+				// 车型数量显示变动
+				vehicleCountDisplayEnabled = vehicleCountDisplayEnable.checked;
 				if (currentNumList.length) resultDiv.innerHTML = renderByWeightGroups();
 			});
 
@@ -697,7 +719,7 @@
 					fArr.push(`<div class="control-row"><span class="span-font">车型${i+1}故障率1/</span><input class="weight-input" type="number" min="1" value="${weightFaultSettings[i].fault}" data-type="fault" data-i="${i}"></div>`);
 					rArr.push(`<div class="control-row"><span class="span-font">车型${i+1}修复率1/</span><input class="weight-input" type="number" min="1" value="${weightFaultSettings[i].repair}" data-type="repair" data-i="${i}"></div>`);
 					pArr.push(`<div class="control-row"><span class="span-font">车型${i+1}报废率1/</span><input class="weight-input" type="number" min="1" value="${weightFaultSettings[i].permanent}" data-type="permanent" data-i="${i}"></div>`);
-					nArr.push(`<div class="control-row"><span class="span-font">车型${i+1}名称</span><input class="weight-input" data-weight-name="${i}" value="${g.name}"></div>`)
+					nArr.push(`<div class="control-row"><span class="span-font">车型${i+1}名称</span><input class="weight-input" data-weight-name="${i}" value="${g.name}"></div>`);
 				});
 				f.innerHTML = makeGrid(fArr);
 				r.innerHTML = makeGrid(rArr);
@@ -730,9 +752,18 @@
 			};
 
 			function renderByWeightGroups() {
-				let html = '<h2 class="section-title">【正常车辆】</h2>';
+				let normalTotal = currentNumList.filter((v, i) => !(permanentFaultIndexes.has(i) || forcePermanentIndexes.has(i) || faultIndexes.has(i) || forceFaultIndexes.has(i) || (isLatestWhite(i) && (whiteStreakCount[i] || 0) >= 7))).length;
+				let abnormalTotal = currentNumList.length - normalTotal;
+				let html = vehicleCountDisplayEnabled ? `<h1 class="vehicle-count-title">车辆总数：${currentNumList.length}</h1><h2 class="section-title">【正常车辆】（${normalTotal}辆）</h2>` : '<h2 class="section-title">【正常车辆】</h2>';
 				weightGroups.forEach((g) => {
-					if (weightTitleEnabled) html += `<div class="weight-title">${g.name}${g.level ? '（' + g.level + '）' : ''}</div>`;
+					if (weightTitleEnabled) {
+						let groupNormal = g.numbers.filter((n) => {
+							const idx = currentNumList.findIndex((x) => x.original === n.original);
+							return !(permanentFaultIndexes.has(idx) || forcePermanentIndexes.has(idx) || faultIndexes.has(idx) || forceFaultIndexes.has(idx) || (isLatestWhite(idx) && (whiteStreakCount[idx] || 0) >= 7));
+						}).length;
+						let groupAbnormal = g.numbers.length - groupNormal;
+						html += `<div class="weight-title">${g.name}${g.level ? '（' + g.level + '）' : ''}${vehicleCountDisplayEnabled ? '（正常' + groupNormal + '辆）' : ''}</div>`;
+					};
 					g.numbers.filter((n) => {
 						const index = currentNumList.findIndex((x) => x.original === n.original);
 						return (!(permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index) || faultIndexes.has(index) || forceFaultIndexes.has(index)) && !(isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7));
@@ -741,9 +772,16 @@
 						html += `<span class="num-item ${goldIndexes.has(index) && blueStreakColorEnabled ? 'blue-streak-gold' : ''}"data-index="${index}">${n.original}${renderBlocks(index)}</span>`;
 					});
 				});
-				html += '<h2 class="section-title">【异常车辆】</h2>';
+				html += vehicleCountDisplayEnabled ? `<h2 class="section-title">【异常车辆】（${abnormalTotal}辆）</h2>` : '<h2 class="section-title">【异常车辆】</h2>';
 				weightGroups.forEach((g) => {
-					if (weightTitleEnabled) html += `<div class="weight-title">${g.name}${g.level ? '（' + g.level + '）' : ''}</div>`;
+					if (weightTitleEnabled) {
+						let groupNormal = g.numbers.filter((n) => {
+							const idx = currentNumList.findIndex((x) => x.original === n.original);
+							return !(permanentFaultIndexes.has(idx) || forcePermanentIndexes.has(idx) || faultIndexes.has(idx) || forceFaultIndexes.has(idx) || (isLatestWhite(idx) && (whiteStreakCount[idx] || 0) >= 7));
+						}).length;
+						let groupAbnormal = g.numbers.length - groupNormal;
+						html += `<div class="weight-title">${g.name}${g.level ? '（' + g.level + '）' : ''}${vehicleCountDisplayEnabled ? '（异常' + groupAbnormal + '辆）' : ''}</div>`;
+					};
 					g.numbers.filter((n) => {
 						const index = currentNumList.findIndex((x) => x.original === n.original);
 						return (permanentFaultIndexes.has(index) || forcePermanentIndexes.has(index) || faultIndexes.has(index) || forceFaultIndexes.has(index) || (isLatestWhite(index) && (whiteStreakCount[index] || 0) >= 7));
@@ -1125,7 +1163,7 @@
 				continueBtn.disabled = true;
 				let numArray = [];
 				do {
-					const inputArr = prompt('请输入纯数字数组作为车辆编号，支持格式：\n1. 空格分隔：0001 0002 0003\n2. 逗号分隔：0001,0002,0003\n3. 带[]格式：[0001,0002,0003]\n4. 用/来分隔不同车型的车辆：0001 0002 0003/0155 0156 0157\n5. 混合分隔也可识别：[0001 0002 0003/0155,0156,0157]');
+					const inputArr = prompt('请输入纯数字数组作为车辆编号，支持格式：\n1. 空格分隔：0001 0002 0003\n2. 逗号分隔：0001,0002,0003\n3. 带[]格式：[0001,0002,0003]\n4. 用/来分隔不同车型的车辆：0001 0002 0003/0155 0156 0157\n5. 混合分隔也可识别：[0001 0002 0003/0155,0156,0157]\n注意：输入重复的数字会只保留一个，也即会去除重复数字');
 					if (inputArr === null) return;
 					weightGroups = [];
 					numArray = parseWeightedNumbers(inputArr.trim());
@@ -1272,6 +1310,9 @@
 						limitEnabled: document.getElementById('permanentLimitMode').value === 'custom',
 						limit: permanentFaultLimit === Infinity ? null : permanentFaultLimit,
 					},
+					countDisplaySettings: {
+						vehicleCountDisplayEnabled,
+					},
 					specialFontSettings: {
 						blueStreakColorEnabled,
 						whiteStreakColorEnabled,
@@ -1329,6 +1370,10 @@
 						const d = JSON.parse(r.result);
 						currentMode = d.mode || 'randomFixed';
 						modeSelect.value = currentMode;
+						if (d.countDisplaySettings) {
+							vehicleCountDisplayEnabled = d.countDisplaySettings.vehicleCountDisplayEnabled !== false;
+							if (vehicleCountDisplayEnable) vehicleCountDisplayEnable.checked = vehicleCountDisplayEnabled;
+						};
 						if (d.specialFontSettings) {
 							blueStreakColorEnabled = d.specialFontSettings.blueStreakColorEnabled !== false;
 							whiteStreakColorEnabled = d.specialFontSettings.whiteStreakColorEnabled !== false;
@@ -1383,6 +1428,8 @@
 						};
 						weightGroups = [];
 						if (d.weightSettings && d.weightSettings.groups) {
+							weightTitleEnabled = d.weightSettings.titleEnabled !== false;
+							if (weightTitleEnable) weightTitleEnable.checked = weightTitleEnabled;
 							weightGroups = d.weightSettings.groups.map((g, i) => ({
 								name: g.name || '车型' + (i + 1),
 								numbers: (g.vehicles || []).map((v) => ({
